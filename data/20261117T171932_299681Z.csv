@@ -1,0 +1,6 @@
+timestamp_utc,elapsed_s,read_duration_s,simulated,diode_voltage_mv,temperature_reported_k,temperature_calibration,lockin_x_v,lockin_y_v,lockin_magnitude_v,lockin_phase_deg,lockin_status,lockin_overload,quality,error,current_rms_a,voltage_component,voltage_gain,area_m2,voltage_contact_spacing_m,resistance_ohm,resistivity_ohm_m
+2026-11-17T17:19:32.800339+00:00,4.416971933096647e-06,0.3229833749937825,False,431.602,336.128,unverified_instrument_curve,-0.0255,0.0002,0.0255,179.5,33,0,ok,,,,1,,,,
+2026-11-17T17:19:33.804818+00:00,1.0044691249495372,0.32748020900180563,False,431.602,336.129,unverified_instrument_curve,-0.0255,0.0002,0.0255,179.5,33,0,ok,,,,1,,,,
+2026-11-17T17:19:34.808408+00:00,2.008073541976046,0.3154772500274703,False,431.604,336.127,unverified_instrument_curve,-0.0255,0.0002,0.0255,179.5,33,0,ok,,,,1,,,,
+2026-11-17T17:19:35.811515+00:00,3.0111650839680806,0.32111525000073016,False,431.606,336.126,unverified_instrument_curve,-0.0255,0.0002,0.0255,179.5,33,0,ok,,,,1,,,,
+2026-11-17T17:19:36.814567+00:00,4.014219791977666,0.3085913750110194,False,431.605,336.127,unverified_instrument_curve,-0.0255,0.0002,0.0255,179.5,33,0,ok,,,,1,,,,

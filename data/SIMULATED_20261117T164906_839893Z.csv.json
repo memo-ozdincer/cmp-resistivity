@@ -1,0 +1,29 @@
+{
+  "started_utc": "2026-11-17T16:49:06.840118+00:00",
+  "simulated": true,
+  "arguments": {
+    "list_devices": false,
+    "simulate": true,
+    "check": false,
+    "port": null,
+    "baud": 57600,
+    "module": 7,
+    "channel": 1,
+    "usb_terminator": "status",
+    "duration": 2.0,
+    "period": 0.5,
+    "output": null,
+    "current_a": null,
+    "voltage_component": null,
+    "voltage_gain": 1,
+    "area_m2": null,
+    "length_m": null
+  },
+  "temperature_calibration": "unverified instrument curve; no correction applied",
+  "sampling": "sequential queries; elapsed_s is sample start, read_duration_s is query span",
+  "lockin_identity": "SIMULATED 7270 \u2014 NOT EXPERIMENTAL DATA",
+  "thermo_identity": "SIMULATED SIM922 \u2014 NOT EXPERIMENTAL DATA",
+  "status": "complete",
+  "rows": 4,
+  "finished_utc": "2026-11-17T16:49:08.842702+00:00"
+}
