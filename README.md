@@ -91,7 +91,7 @@ about 0.4317 **V**, matching approximately 431.7 **mV** on the front panel; this
 corrects the original driver's misleading mV comment. Conversion to mV happens
 once in the acquisition coordinator. No old calibration coefficients are applied.
 The current user-reported reference (295.35 K / 22.2 °C, 435.4 mV), recorded on
-2026-11-18, is preserved in
+2026-11-18 at ambient pressure without vacuum, is preserved as a candidate in
 `temp_calibration.py`; a second reference is still needed.
 
 ## Resistance and resistivity

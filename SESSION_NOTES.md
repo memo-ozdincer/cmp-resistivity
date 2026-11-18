@@ -17,7 +17,8 @@
 Correction on 2026-11-18: the user explicitly invalidated the earlier
 26.2 °C / 431.6 mV reference pair. Do not use that pair for calibration.
 The replacement user-reported pair is **22.2 °C (295.35 K), 435.4 mV**, supplied
-on 2026-11-18. Confirm thermometer independence and sample equilibrium before
+on 2026-11-18, with no vacuum applied (ambient pressure). This is a candidate
+reference: confirm thermometer independence and diode/sample equilibrium before
 using it in a final calibration. A second independent reference is still needed.
 The instrument previously reported roughly 336–338 K using its standard curve
 (CURV 0). No sensor curve was uploaded or changed. Historical acquisition data
