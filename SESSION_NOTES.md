@@ -14,13 +14,14 @@
 
 ## Temperature calibration — deferred
 
-The user confirmed the sample was settled at room temperature and independently
-measured 26.2 °C. The SIM922 front-panel diode reading was 431.6 mV, giving one
-reference point: **299.35 K, 431.6 mV**. The instrument itself reported roughly
-336–338 K using its standard curve (CURV 0). The old software calibration predicts
-approximately room temperature at that voltage, but has not been validated across
-the experiment's range. A second independent reference is needed before fitting
-a new two-point calibration. No sensor curve was uploaded or changed.
+Correction on 2026-11-18: the user explicitly invalidated the earlier
+26.2 °C / 431.6 mV reference pair. Do not use that pair for calibration.
+The replacement user-reported pair is **22.2 °C (295.35 K), 435.4 mV**, supplied
+on 2026-11-18. Confirm thermometer independence and sample equilibrium before
+using it in a final calibration. A second independent reference is still needed.
+The instrument previously reported roughly 336–338 K using its standard curve
+(CURV 0). No sensor curve was uploaded or changed. Historical acquisition data
+remain unchanged; they are raw readings, not calibration references.
 
 Live serial measurements established that VOLT? returns volts, despite the old
 Python docstring claiming mV. Acquisition converts to mV once and records the

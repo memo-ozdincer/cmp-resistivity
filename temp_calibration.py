@@ -6,7 +6,7 @@ applied by acquisition. The new independent point is insufficient for a slope.
 import math
 
 LEGACY_REFERENCE_POINTS = ((297.6, 435.9), (77.0, 992.0))  # K, mV
-CURRENT_REFERENCE_POINT = (299.35, 431.6)  # Independent room thermometer + SIM922
+CURRENT_REFERENCE_POINT = (295.35, 435.4)  # User-reported pair, 2026-11-18: 22.2 °C, mV
 
 
 def calibration2(temp, c1, c2):
