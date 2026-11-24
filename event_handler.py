@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 FIELDS = [
-    'timestamp_utc', 'elapsed_s', 'read_duration_s', 'simulated',
+    'sample_index', 'timestamp_utc', 'elapsed_s', 'read_duration_s', 'simulated',
     'diode_voltage_mv', 'temperature_reported_k', 'temperature_calibration',
     'lockin_x_v', 'lockin_y_v', 'lockin_magnitude_v', 'lockin_phase_deg',
     'lockin_status', 'lockin_overload', 'quality', 'error',
@@ -34,7 +34,8 @@ class SampleError(RuntimeError):
 
 class EventHandler:
     def __init__(self, lock_in, thermo, *, current_a=None, voltage_component=None,
-                 voltage_gain=1.0, area_m2=None, length_m=None, simulated=False):
+                 voltage_gain=1.0, area_m2=None, length_m=None, simulated=False,
+                 extra_channels=()):
         positive(voltage_gain, 'Voltage gain')
         if current_a is not None:
             positive(current_a, 'RMS current')
@@ -53,10 +54,16 @@ class EventHandler:
         self.current_a, self.component = current_a, voltage_component
         self.gain, self.area, self.length = voltage_gain, area_m2, length_m
         self.simulated = simulated
+        self.extra_channels = tuple(extra_channels)
+        if len(set(self.extra_channels)) != len(self.extra_channels) or any(
+                channel not in range(1, 5) for channel in self.extra_channels):
+            raise ValueError('Extra channels must be distinct channel numbers from 1–4.')
+        self.fields = FIELDS + [field for channel in self.extra_channels for field in
+            (f'diode_ch{channel}_voltage_mv', f'temperature_ch{channel}_reported_k')]
 
     def sample(self, start):
         sample_start = time.monotonic()
-        row = dict.fromkeys(FIELDS, '')
+        row = dict.fromkeys(self.fields, '')
         row.update(timestamp_utc=datetime.now(timezone.utc).isoformat(),
                    elapsed_s=sample_start - start, simulated=self.simulated,
                    temperature_calibration='unverified_instrument_curve',
@@ -67,6 +74,9 @@ class EventHandler:
         try:
             row['diode_voltage_mv'] = 1000 * self.thermo.get_V()
             row['temperature_reported_k'] = self.thermo.get_T()
+            for channel in self.extra_channels:
+                row[f'diode_ch{channel}_voltage_mv'] = 1000 * self.thermo.get_V(channel)
+                row[f'temperature_ch{channel}_reported_k'] = self.thermo.get_T(channel)
             if self.lock_in is None:
                 row['quality'] = 'temperature_only'
                 if not 0 < row['diode_voltage_mv'] < 2500:
@@ -113,25 +123,27 @@ class EventHandler:
         return row
 
     def run(self, filename, duration=60, sample_period=1, *, on_sample=None):
-        positive(duration, 'Duration')
+        if duration is not None:
+            positive(duration, 'Duration')
         positive(sample_period, 'Sample period')
         path = Path(filename)
         path.parent.mkdir(parents=True, exist_ok=True)
         count = 0
         # Exclusive creation prevents accidentally overwriting another run.
-        with path.open('x', newline='') as output:
-            writer = csv.DictWriter(output, fieldnames=FIELDS)
+        with path.open('x', newline='', encoding='utf-8') as output:
+            writer = csv.DictWriter(output, fieldnames=self.fields, lineterminator='\n')
             writer.writeheader()
             output.flush()
             os.fsync(output.fileno())
             start = time.monotonic()
-            while time.monotonic() - start < duration:
+            while duration is None or time.monotonic() - start < duration:
                 sample_start = time.monotonic()
                 failure = None
                 try:
                     row = self.sample(start)
                 except SampleError as exc:
                     row, failure = exc.row, exc
+                row['sample_index'] = count
                 writer.writerow(row)
                 output.flush()
                 os.fsync(output.fileno())
@@ -142,6 +154,10 @@ class EventHandler:
                     if failure.row['quality'] == 'interrupted':
                         raise KeyboardInterrupt from failure
                     raise failure
-                next_time = min(sample_start + sample_period, start + duration)
+                # Skip missed deadlines instead of burst-reading stale intervals.
+                elapsed = time.monotonic() - start
+                next_time = start + (math.floor(elapsed / sample_period) + 1) * sample_period
+                if duration is not None:
+                    next_time = min(next_time, start + duration)
                 time.sleep(max(0, next_time - time.monotonic()))
         return count

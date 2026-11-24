@@ -19,13 +19,20 @@ SETUP_CMDS = {
 def usb_backend():
     backend = usb.backend.libusb1.get_backend()
     if backend is None:
+        try:
+            import libusb_package
+            backend = usb.backend.libusb1.get_backend(find_library=libusb_package.find_library)
+        except ImportError:
+            pass
+    if backend is None:
         for path in ('/opt/homebrew/lib/libusb-1.0.dylib', '/usr/local/lib/libusb-1.0.dylib'):
             if Path(path).exists():
                 backend = usb.backend.libusb1.get_backend(find_library=lambda _: path)
                 if backend is not None:
                     break
     if backend is None:
-        raise RuntimeError('libusb is missing. On macOS: brew install libusb')
+        raise RuntimeError('libusb is missing. Run uv sync (Windows DLL included); '
+                           'on macOS: brew install libusb. See docs/windows-setup.md.')
     return backend
 
 
@@ -139,7 +146,8 @@ class LockIn7270:
 
     def get_settings(self):
         return {cmd: self.query_safe(cmd) for cmd in
-                ('REFMODE', 'IMODE', 'VMODE', 'IE', 'TC.', 'SEN.', 'OF.', 'OA.')}
+                ('REFMODE', 'IMODE', 'VMODE', 'IE', 'DCCOUPLE', 'FLOAT',
+                 'REFP.', 'TC.', 'SEN.', 'OF.', 'OA.')}
 
     def close(self):
         if self.dev is not None:

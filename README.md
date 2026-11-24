@@ -1,145 +1,81 @@
-# Resistivity experiment acquisition
+# CMP resistivity lab
 
-Run commands from this directory. Dependencies are managed by `uv` using
-`pyproject.toml` and `uv.lock`; `uv run` prepares the environment automatically.
-Original files are preserved in `backups/original/`.
+Measure lock-in voltage and temperature-diode voltage during cooling and warming
+of a BSCCO sample. Python + **uv**. Raw voltages are saved first; temperature
+calibration is applied afterward using the same run's reference intervals.
 
-## Connection check
+**Start here for the next lab session:** [collection runbook](docs/collection-runbook.md).
+On the lab PC, first follow [Windows and USB setup](docs/windows-setup.md).
+
+## Commands
+
+Run from this project folder in PowerShell (Windows) or Terminal (Mac):
 
 ```sh
+uv sync --locked --python 3.12
 uv run python daq_example.py --list-devices
+uv run python daq_example.py --simulate --duration 60 --period 1
 ```
 
-The lab SIM900 has been identified at `/dev/cu.usbserial-BG02V860`, **9600 baud**.
-The SIM922 is in **slot 7**, with the diode on **channel 1**. These are the defaults
-except for the serial path, which is auto-selected only when unambiguous.
-
-The 7270 now communicates successfully through its native USB-B socket,
-identified as `0a2d:001b`. Use this connection for acquisition. A five-sample
-combined live run passed with no overload/reference warnings and is saved at
-`data/20261117T171932_299681Z.csv`, with metadata alongside it.
-
-A separate Prolific serial cable had been connected to AUX and did not answer.
-Its official driver is installed and active, but serial acquisition has not been
-verified on the instrument. The front-panel serial settings are 19200 baud,
-7 data bits, even parity, echo ON, prompt ON.
-
-For native 7270 USB:
+Replace `COM4` below with the SIM900 port actually found on Windows:
 
 ```sh
-uv run python daq_example.py --port /dev/cu.usbserial-BG02V860 --check
+uv run python daq_example.py --port COM4 --check
+uv run python daq_example.py --port COM4 --continuous --period 1 --sensor-name "sample plate - VERIFY" --output data/runs/run_20261124.csv
 ```
 
-For the serial connection, use the detected Prolific port (it can change when moved).
-Read the 7270 **RS232 Settings** menu and match baud, data bits, parity, and echo.
-The command below matches the photographed settings: 19200 baud, 7 data bits, even parity, echo enabled.
-**Prompts must be enabled.** Add `--lockin-no-echo` if echo is off.
+Ctrl-C stops and preserves written rows. The script prevents automatic idle sleep
+on Windows while running; keep the PC powered and its lid open. A manual sleep,
+shutdown, reboot or USB disconnect can still stop the run. On Mac the known SIM900
+port was `/dev/cu.usbserial-BG02V860`; use that instead of COM4 if still present.
 
-```sh
-uv run python daq_example.py --port /dev/cu.usbserial-BG02V860 \
-  --lockin-port /dev/cu.PL2303G-USBtoUART1140 \
-  --lockin-baud 19200 --lockin-data-bits 7 --lockin-parity E --check
+## Documentation
+
+| File | Contents |
+|---|---|
+| [Collection runbook](docs/collection-runbook.md) | Before cooling, continuous logging, reference markers, heating, stopping |
+| [Windows setup](docs/windows-setup.md) | uv installation, COM ports, native USB versus serial, driver troubleshooting |
+| [Experiment notes](docs/experiment-notes.md) | Theory, equipment roles, four-wire explanation, all reported observations and corrections |
+| [Wiring worksheet](docs/wiring-worksheet.md) | Blank terminal and sensor map to verify with the apparatus/TA |
+| [Data and calibration](docs/data-and-calibration.md) | Units, schemas, two-point models, derived output, limitations |
+| [Code history](docs/code-history.md) | Supplied versus added code, original bugs, current design |
+| [Verification](docs/verification.md) | Tests performed, hardware evidence, what remains unverified |
+| [Original session notes](docs/archive/session-notes-2026-11-17.md) | Archived account of initial setup; current documents take precedence |
+| [Lab handout](docs/handouts/cmp-lab-handout.pdf) | Course procedure, circuit, cryostat and calibration instructions |
+| [Cryostat orientation](docs/handouts/cryostat-getting-started.pdf) | Dewar parts, vacuum spaces and handling |
+
+## Folder layout
+
+```text
+*.py                    active acquisition, marking and analysis commands
+pyproject.toml, uv.lock  reproducible uv environment (do not copy .venv to Windows)
+docs/                   current documentation, handouts and archived notes
+backups/original/       untouched supplied code, including its known faults
+tests/                  hardware-free tests
+data/preliminary/       actual five-sample connection checks from Nov 17
+data/simulated/         old synthetic example; never use as experimental data
+data/runs/              new raw runs, metadata, markers and derived outputs
 ```
 
-The code identifies both instruments and checks that the lock-in is using
-single-reference voltage-input mode, with its input enabled. It does not set the
-oscillator amplitude, frequency, input selection, phase, sensitivity, excitation,
-or temperature calibration. Review those settings for the actual wiring. The
-old A−B defaults are available only through an explicit `lockin.set_up()` call;
-they are not applied by acquisition.
+Acquisition preserves instrument settings. Temperature display remains
+uncalibrated. The latest reported 0.1-ohm resistor check gave approximately
+0.114 ohm; driver distortion and grounding are **unresolved**, not a passed
+validation for the superconducting sample. Confirm them with the TA before
+relying on resistance results. Logging can still preserve the raw evidence.
 
-## Record data
+## Program roles
 
-For combined lock-in and temperature acquisition:
-
-```sh
-uv run python daq_example.py --port /dev/cu.usbserial-BG02V860 --duration 600 --period 1
-```
-
-Temperature-only acquisition is also available:
-
-```sh
-uv run python daq_example.py --temperature-only \
-  --port /dev/cu.usbserial-BG02V860 --duration 600 --period 1
-```
-
-The five-sample live connection check is saved in
-`data/20261117T170236_852605Z.csv` with metadata alongside it. It contains actual
-diode readings of 431.651–431.654 mV; lock-in and derived columns are blank.
-
-Replace `--check` in the applicable command above with `--duration 600 --period 1`
-to request ten minutes of readings at roughly one-second intervals. Use Ctrl-C
-to stop early. Run `--help` to see all options.
-
-Each run creates a new timestamped CSV and JSON metadata file in `data/`.
-Existing files are never overwritten, including when using `--output PATH.csv`.
-Each CSV row is flushed and synced to disk immediately. A communication failure
-stops acquisition and saves any values already read in the partial row, together
-with the error. Metadata records identities, startup lock-in settings, arguments,
-row count, and the completion/error/interruption status.
-
-Readings include UTC and elapsed time, query duration, diode voltage in **mV**,
-instrument-reported temperature in **K**, lock-in X/Y/magnitude in **V**, phase in
-degrees, and status/overload flags. Queries are sequential, not simultaneous;
-`read_duration_s` records their time span. Sampling can be slower than the requested
-period if the instruments take longer to reply.
-
-**Temperature calibration is deferred.** `temperature_reported_k` is the SIM922's
-own unverified result, currently approximately 336 K near room temperature. It is
-not a corrected temperature. The raw serial `VOLT?` response was verified live as
-about 0.4317 **V**, matching approximately 431.7 **mV** on the front panel; this
-corrects the original driver's misleading mV comment. Conversion to mV happens
-once in the acquisition coordinator. No old calibration coefficients are applied.
-The current user-reported reference (295.35 K / 22.2 °C, 435.4 mV), recorded on
-2026-11-18 at ambient pressure without vacuum, is preserved as a candidate in
-`temp_calibration.py`; a second reference is still needed.
-
-## Resistance and resistivity
-
-Without a measured current, derived columns stay blank. To enable them, supply
-`--current-a` with the independently measured **sample RMS current in amperes**
-and select `--voltage-component x` or `--voltage-component magnitude`.
-Do not substitute the oscillator voltage for sample current.
-
-`x` requires phase alignment to the sample current and preserves the measured
-sign. `magnitude` gives impedance magnitude; interpreting it as resistance assumes
-a negligible reactive component. The selected component is recorded in every row.
-If an external amplifier is present, supply its voltage gain with `--voltage-gain`.
-
-For a uniform sample, also supply `--area-m2` (cross-sectional area in m²) and
-`--length-m` (voltage-contact spacing in m). The code uses `R = V/(gain*I)` and
-`rho = R*A/L`. These geometry factors do not cover other arrangements such as
-van der Pauw measurements. No current or dimensions are guessed. Derived values
-are left blank when the lock-in reports overload or loss of reference lock.
-
-## Simulation and verification
+- `daq_example.py`: instrument connections, CLI, metadata, continuous/timed mode.
+- `event_handler.py`: sequential reads, timestamps, bounded-memory per-row saving.
+- `lockin_7270.py`: native USB and optional RS232 front-panel queries.
+- `sim922.py`: SIM900 serial pass-through to SIM922; raw voltage returned in V.
+- `oscilloscope.py`: optional scope helper; NOT part of automatic current logging.
+- `oscilliscope.py`: compatibility import for the old spelling.
+- `run_support.py`: atomic metadata and temporary Windows idle-sleep prevention.
+- `mark_run.py`: timestamp lab events from a second terminal on the same PC.
+- `calibrate_run.py`: derive a NEW calibrated CSV from marked stable intervals.
+- `temp_calibration.py`: offline model helpers and clearly qualified historical points.
 
 ```sh
-uv run python daq_example.py --simulate --duration 5 --period 1
 uv run python -m unittest discover -s tests -v
 ```
-
-Synthetic data are marked in every row, in metadata, and in default filenames.
-They are not experimental measurements. Tests cover protocol framing, units,
-resistivity calculations, overload handling, file protection, interruption, and
-saving partial samples after a disconnect.
-
-The oscilloscope is optional. `oscilloscope.py` provides `Oscilloscope`, and the
-old misspelled `oscilliscope.py` remains a compatibility import. Its identity query
-has been tested against the connected Keysight DSOX1204G. It is not used as a
-substitute temperature sensor in the core acquisition path. The old threaded
-curve acquisition has been retired from the active files and is archived with
-the originals; the current path is designed for slow front-panel measurements.
-
-## Fresh environment
-
-```sh
-uv sync
-```
-
-Native USB access also needs libusb; it is already installed on this Mac.
-On another Mac: `brew install libusb`.
-
-Protocol references: [7270 manual](https://www.ameteksi.jp/-/media/ameteksi/download_links/documentations/7270/197852-a-mnl-c.pdf),
-[SIM900 manual](https://www.thinksrs.com/downloads/pdfs/manuals/SIM900m.pdf),
-[SIM922 manual](https://www.thinksrs.com/downloads/pdfs/manuals/SIM922m.pdf).

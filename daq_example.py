@@ -4,18 +4,20 @@ from contextlib import ExitStack
 from datetime import datetime, timezone
 import json
 import math
+import platform
 from pathlib import Path
 import sys
 import time
 
 from event_handler import EventHandler, positive
+from run_support import keep_awake, write_metadata
 
 
 class SimulatedThermo:
     identity = 'SIMULATED SIM922 — NOT EXPERIMENTAL DATA'
-    def get_V(self):
+    def get_V(self, channel=None):
         return 0.4316 + 0.00001 * math.sin(time.monotonic())
-    def get_T(self):
+    def get_T(self, channel=None):
         return 336.1
 
 
@@ -50,9 +52,17 @@ def parser():
     p.add_argument('--lockin-parity', choices=('N', 'E', 'O'), default='E')
     p.add_argument('--lockin-no-echo', action='store_true',
                    help='Use if echo is disabled in the 7270 RS232 settings; prompts must be enabled')
-    p.add_argument('--duration', type=float, default=60, help='Acquisition duration in seconds')
+    timing = p.add_mutually_exclusive_group()
+    timing.add_argument('--duration', type=float, default=60, help='Duration in seconds (default: 60)')
+    timing.add_argument('--continuous', action='store_true', help='Run until Ctrl-C; no duration limit')
+    p.add_argument('--sensor-name', default='unidentified', help='Physical location of primary diode')
+    p.add_argument('--extra-channels', nargs='+', type=int, choices=range(1, 5), default=[],
+                   help='Additional connected/excited SIM922 channels to log')
+    p.add_argument('--notes', default='', help='Sample, terminal map, pressure, phase and current notes')
+    p.add_argument('--console-every', type=float, default=10, help='Console update interval in seconds')
+    p.add_argument('--allow-sleep', action='store_true', help='Disable automatic Windows idle-sleep prevention')
     p.add_argument('--period', type=float, default=1, help='Requested sample interval in seconds')
-    p.add_argument('--output', type=Path, help='New CSV path (never overwrites); default: data/<timestamp>.csv')
+    p.add_argument('--output', type=Path, help='New CSV path (never overwrites); default: data/runs/<timestamp>.csv')
     p.add_argument('--current-a', type=float, help='Independently measured sample RMS current in A')
     p.add_argument('--voltage-component', choices=('x', 'magnitude'),
                    help='x needs correct phase alignment; magnitude measures impedance magnitude')
@@ -71,7 +81,12 @@ def list_devices():
     for port in list_ports.comports():
         print(f'  {port.device}: {port.description}')
     print('USB devices (7270 expected VID:PID 0a2d:001b):')
-    for dev in usb.core.find(find_all=True, backend=usb_backend()):
+    try:
+        devices = list(usb.core.find(find_all=True, backend=usb_backend()))
+    except Exception as exc:
+        print(f'  Native USB unavailable: {exc}')
+        return
+    for dev in devices:
         try:
             name = usb.util.get_string(dev, dev.iProduct)
         except usb.core.USBError:
@@ -94,29 +109,37 @@ def main(argv=None):
         return 0
     options = dict(current_a=args.current_a, voltage_component=args.voltage_component,
                    voltage_gain=args.voltage_gain, area_m2=args.area_m2,
-                   length_m=args.length_m, simulated=args.simulate)
+                   length_m=args.length_m, simulated=args.simulate, extra_channels=args.extra_channels)
     try:
         positive(args.duration, 'Duration')
         positive(args.period, 'Period')
+        positive(args.console_every, 'Console interval')
+        if args.channel in args.extra_channels:
+            raise ValueError('Primary channel must not be repeated in --extra-channels.')
         if args.temperature_only and args.current_a is not None:
             raise ValueError('Temperature-only mode cannot calculate resistance.')
         EventHandler(None, None, **options)  # Validate before any connection.
     except ValueError as exc:
         p.error(str(exc))
     prefix = 'SIMULATED_' if args.simulate else ''
-    path = args.output or Path('data') / (
+    path = args.output or Path('data/runs') / (
         prefix + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ') + '.csv')
     metadata_path = path.with_suffix(path.suffix + '.json')
     if not args.check and (path.exists() or metadata_path.exists()):
         p.error(f'Output already exists: {path} or {metadata_path}')
     metadata = {'started_utc': datetime.now(timezone.utc).isoformat(),
                 'simulated': args.simulate, 'arguments': vars(args).copy(),
+                'platform': platform.platform(), 'python_version': sys.version,
+                'current_source': 'fixed_user_assumption' if args.current_a is not None else 'not_logged',
                 'temperature_calibration': 'unverified instrument curve; no correction applied',
                 'sampling': 'sequential queries; elapsed_s is sample start, read_duration_s is query span'}
     exit_code = 0
-    metadata_file = None
+    owns_metadata = False
+    last_console = last_heartbeat = float('-inf')
     with ExitStack() as stack:
         try:
+            metadata['windows_idle_sleep_prevented'] = stack.enter_context(
+                keep_awake(not args.allow_sleep))
             if args.simulate:
                 lockin, thermo = SimulatedLockIn(), SimulatedThermo()
                 if args.temperature_only:
@@ -147,6 +170,10 @@ def main(argv=None):
                 excitation = thermo.get_excitation()
                 if excitation.upper() not in ('1', 'ON'):
                     raise RuntimeError(f'SIM922 channel {args.channel} excitation is off.')
+                for channel in args.extra_channels:
+                    excitation_reply = thermo.send_receive(f'EXON? {channel}').decode('ascii').strip()
+                    if excitation_reply.upper() not in ('1', 'ON'):
+                        raise RuntimeError(f'Extra SIM922 channel {channel} excitation is off.')
                 metadata.update(sim900_identity=thermo.mainframe_id,
                     sim922_curve=thermo.get_curve(), sim922_excitation=excitation)
             lockin_identity = lockin.identity if lockin is not None else 'Not used (temperature-only mode)'
@@ -154,21 +181,36 @@ def main(argv=None):
             handler = EventHandler(lockin, thermo, **options)
             print(f'{lockin_identity}\n{thermo.identity}')
             print('Temperature is the unverified instrument reading; diode voltage is saved separately.')
+            print('Current is not automatically read from the scope; document MON OUT checks separately.')
             if args.check:
                 print(json.dumps(metadata, indent=2, default=str))
                 display(handler.sample(time.monotonic()))
             else:
                 path.parent.mkdir(parents=True, exist_ok=True)
-                metadata_file = stack.enter_context(metadata_path.open('x'))
-                metadata['status'] = 'running'
-                metadata['rows'] = 0
-                json.dump(metadata, metadata_file, indent=2, default=str)
-                metadata_file.flush()
+                # Claim the metadata name exclusively before replacing our own snapshots.
+                with metadata_path.open('x', encoding='utf-8'):
+                    pass
+                owns_metadata = True
+                metadata.update(status='running', rows=0, output=str(path.resolve()),
+                                schema_version=2)
+                write_metadata(metadata_path, metadata)
                 print(f'Saving to {path.resolve()} (Ctrl-C stops and preserves saved rows).')
+                print('Use mark_run.py in a SECOND terminal to timestamp reference intervals and events.')
                 def saved_sample(row):
+                    nonlocal last_console, last_heartbeat
                     metadata['rows'] += 1
-                    display(row)
-                handler.run(path, args.duration, args.period, on_sample=saved_sample)
+                    metadata['last_sample_utc'] = row['timestamp_utc']
+                    metadata['last_quality'] = row['quality']
+                    metadata['last_elapsed_s'] = row['elapsed_s']
+                    now = time.monotonic()
+                    if now - last_heartbeat >= 10 or row['quality'] in ('error', 'interrupted'):
+                        write_metadata(metadata_path, metadata)
+                        last_heartbeat = now
+                    if now - last_console >= args.console_every or row['quality'] not in ('ok', 'temperature_only'):
+                        display(row)
+                        last_console = now
+                handler.run(path, None if args.continuous else args.duration,
+                            args.period, on_sample=saved_sample)
                 metadata['status'] = 'complete'
         except KeyboardInterrupt:
             metadata['status'] = 'interrupted'
@@ -176,15 +218,12 @@ def main(argv=None):
             exit_code = 130
         except Exception as exc:
             metadata.update(status='error', error=f'{type(exc).__name__}: {exc}')
-            print(f'Acquisition failed: {exc}', file=sys.stderr)
+            print(f'\aAcquisition failed: {exc}', file=sys.stderr)
             exit_code = 1
         finally:
-            if metadata_file is not None:
+            if owns_metadata:
                 metadata['finished_utc'] = datetime.now(timezone.utc).isoformat()
-                metadata_file.seek(0)
-                metadata_file.truncate()
-                json.dump(metadata, metadata_file, indent=2, default=str)
-                metadata_file.flush()
+                write_metadata(metadata_path, metadata)
     return exit_code
 
 

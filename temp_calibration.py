@@ -46,5 +46,5 @@ def temperature_from_mv(voltage_mv, c1, c2):
 
 if __name__ == '__main__':
     print('Calibration deferred. No instrument settings have been changed.')
-    print('Independent reference (K, mV):', CURRENT_REFERENCE_POINT)
+    print('Historical candidate only, not automatically applied (K, mV):', CURRENT_REFERENCE_POINT)
     print('A second reference is needed before fitting a new calibration.')

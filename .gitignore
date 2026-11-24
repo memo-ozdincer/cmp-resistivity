@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 .DS_Store
+# Local transfer artifacts and interrupted metadata scratch files
+*.csv.json.tmp
+output/

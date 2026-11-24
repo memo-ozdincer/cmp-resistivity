@@ -173,7 +173,7 @@ class AcquisitionTests(unittest.TestCase):
                 EventHandler(None, None, **options)
 
     def test_two_point_calibration_and_degenerate_points(self):
-        points = ((299.35, 431.6), (100.0, 900.0))
+        points = ((300.0, 400.0), (100.0, 900.0))  # Synthetic unit-test values.
         params = fit_two_points(*points)
         for temperature, voltage in points:
             self.assertAlmostEqual(temperature_from_mv(voltage, *params), temperature)

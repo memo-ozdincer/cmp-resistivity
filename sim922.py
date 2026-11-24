@@ -81,12 +81,18 @@ class SIM922(serial.Serial):
             raise RuntimeError(f'Non-finite SIM922 reply to {command}: {reply!r}')
         return value
 
-    def get_T(self):
-        return self._number(f'TVAL? {self.channel}')
+    def get_T(self, channel=None):
+        channel = self.channel if channel is None else channel
+        if channel not in range(1, 5):
+            raise ValueError('Channel must be 1–4.')
+        return self._number(f'TVAL? {channel}')
 
-    def get_V(self):
+    def get_V(self, channel=None):
         """Return diode voltage in volts; multiply by 1000 for front-panel mV."""
-        return self._number(f'VOLT? {self.channel}')
+        channel = self.channel if channel is None else channel
+        if channel not in range(1, 5):
+            raise ValueError('Channel must be 1–4.')
+        return self._number(f'VOLT? {channel}')
 
     def get_curve(self):
         return self.send_receive(f'CURV? {self.channel}').decode('ascii').strip()
