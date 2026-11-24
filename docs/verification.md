@@ -25,8 +25,9 @@ diode channels, all synthetic quality flags OK, and matching final metadata. It 
 heartbeat updates, three diode channels and filesystem saving with actual sleeps.
 This does not prove hardware stability or Windows driver access.
 
-CI runs the hardware-free suite on Windows, macOS and Linux with Python 3.12.
-A configured workflow is not evidence of a passed CI run; check GitHub Actions.
+The hardware-free suite also **passed on Windows, macOS and Linux with Python
+3.12** in [GitHub Actions run 45306886623](https://github.com/memo-ozdincer/cmp-resistivity/actions/runs/45306886623),
+for implementation commit `c7b7a4f`. This does not test instrument drivers or hardware.
 Native Windows hardware and idle-sleep behaviour must be tested on the lab PC.
 
 ## Earlier physical hardware evidence
