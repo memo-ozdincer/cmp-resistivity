@@ -46,6 +46,8 @@ def parser():
     p.add_argument('--channel', type=int, choices=range(1, 5), default=1)
     p.add_argument('--usb-terminator', choices=('status', 'null'), default='status',
                    help='Match the 7270 USB Status menu; normally status')
+    p.add_argument('--timeout-ms', type=int, default=2000,
+                   help='7270 query timeout in milliseconds (default: 2000)')
     p.add_argument('--lockin-port', help='7270 serial port; omitted means native USB')
     p.add_argument('--lockin-baud', type=int, default=9600)
     p.add_argument('--lockin-data-bits', type=int, choices=(7, 8), default=7)
@@ -114,6 +116,7 @@ def main(argv=None):
         positive(args.duration, 'Duration')
         positive(args.period, 'Period')
         positive(args.console_every, 'Console interval')
+        positive(args.timeout_ms, 'Lock-in timeout')
         if args.channel in args.extra_channels:
             raise ValueError('Primary channel must not be repeated in --extra-channels.')
         if args.temperature_only and args.current_a is not None:
@@ -154,9 +157,11 @@ def main(argv=None):
                         raise ValueError('The lock-in and SIM900 need different serial ports.')
                     lockin = stack.enter_context(SerialLockIn7270(args.lockin_port,
                         baud=args.lockin_baud, data_bits=args.lockin_data_bits,
-                        parity=args.lockin_parity, echo=not args.lockin_no_echo))
+                        parity=args.lockin_parity, echo=not args.lockin_no_echo,
+                        timeout_ms=args.timeout_ms))
                 else:
-                    lockin = stack.enter_context(LockIn7270(terminator=args.usb_terminator))
+                    lockin = stack.enter_context(LockIn7270(terminator=args.usb_terminator,
+                                                          timeout_ms=args.timeout_ms))
                 if lockin is not None:
                     settings = lockin.get_settings()
                     metadata['lockin_settings'] = settings

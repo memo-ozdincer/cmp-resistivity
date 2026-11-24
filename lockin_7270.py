@@ -88,8 +88,14 @@ class LockIn7270:
                 response.extend(self.dev.read(self.ep_in.bEndpointAddress,
                     self.ep_in.wMaxPacketSize, timeout=max(1, int(remaining * 1000))))
             except usb.core.USBTimeoutError as exc:
+                detail = ('No response bytes were received.' if not response else
+                          f'Received {len(response)} bytes before timeout; '
+                          f'prefix={bytes(response[:32])!r}.')
                 raise TimeoutError(f'7270 timed out on {command!r}. '
-                                   'Check cable and --usb-terminator.') from exc
+                                   f'{detail} Timeout={self.timeout_ms} ms. '
+                                   'Stop other instrument software, return the front panel to '
+                                   'Main Display, and check the USB connection. '
+                                   'Change --usb-terminator only to match its USB menu.') from exc
             if len(response) > 65536:
                 raise RuntimeError('Oversized 7270 response.')
             end = response.find(0)

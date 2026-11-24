@@ -142,3 +142,30 @@ Test a Ctrl-C stop and confirm all sidecars are present. Do this before adding L
 | Serial 7270 no reply | RS232 vs AUX, baud/parity/echo, null-modem wiring |
 | HOT / 2500 mV / implausible sensor | Physical channel mapping, diode wiring, excitation, disconnected input |
 | CSV permission error | Writable local path; close Excel; choose a new filename |
+
+### A query such as MAG. times out after earlier queries succeeded
+
+A timeout means that query did not complete; it does not prove the cable or
+terminator is wrong. The program saves the partial row and stops. Return the
+7270 to Main Display (leave Communications Monitor), close other instrument
+software, and reconnect its USB cable with acquisition stopped. Preserve any
+existing CSV. Try a check with a longer timeout (10 seconds instead of two):
+
+```powershell
+git pull --ff-only
+uv run python daq_example.py --port COM4 --timeout-ms 10000 --check
+```
+
+Use the actual SIM900 COM port. If the check succeeds, start a new run filename
+and include `--timeout-ms 10000`. This is a diagnostic allowance, not proof that
+the fault is fixed. If it repeatedly fails on MAG., retain the exact message
+(including whether any response bytes arrived), the command line, and the USB
+terminator-menu setting. Do not switch status/null by trial and error after
+successful replies. Do not power-cycle a shared mainframe during cryogenic
+operation just to recover a computer link.
+
+If cooling is already in progress and lock-in acquisition is unavailable,
+`--temperature-only` can preserve diode data in a separate new file. It cannot
+recover missing sample voltages. Record the interruption and reference times;
+references across separate files require explicit analysis rather than the
+single-file calibration shortcut.
