@@ -1,0 +1,63 @@
+{
+  "profile": {
+    "id": "recooldown-provisional-2026-11-27",
+    "status": "provisional",
+    "model": "linear",
+    "sensors": {
+      "base_plate": {
+        "channel": 1,
+        "warm": {
+          "temperature_k": 296.65,
+          "voltage_mv": 433.18815384615385
+        },
+        "cold": {
+          "temperature_k": 77.0,
+          "voltage_mv": 981.166
+        },
+        "provenance": "Warm: 23.5 C marker mean in run _1. Cold: highest recorded ch1 voltage in run _3 assigned nominal 77 K at user request."
+      },
+      "sample": {
+        "channel": 2,
+        "warm": {
+          "temperature_k": 296.65,
+          "voltage_mv": 28.08
+        },
+        "cold": {
+          "temperature_k": 77.0,
+          "voltage_mv": 619.0
+        },
+        "provenance": "User-reported sample warm reading 28.08 mV and approximate LN2 reading 619 mV. The earlier stated room temperature 23.5 C is assumed for the new warm reading; it was not independently supplied with that reading."
+      }
+    },
+    "limitations": [
+      "Two-point linear interpolation; intermediate temperatures are not independently validated.",
+      "Both cold references assume sensor equilibrium at nominal 77 K; no pressure correction.",
+      "Sample cold voltage is approximate, not the mean of an identified stable interval.",
+      "Sample warm temperature is assumed to be the earlier reported 23.5 C.",
+      "Base plate and sample use different curves. Values outside each reference interval are left blank and flagged; raw readings are always preserved.",
+      "The later base plate reading near 431.9 mV is preserved as an observation, not substituted for the recorded 23.5 C reference."
+    ]
+  },
+  "source": "/Users/memoozdincer/Documents/3f/APL/resistivity/calibrations/recooldown-provisional.json",
+  "sha256": "1f132bb14584b8a1eccabc9545d4f6dae6a0c3ed0be85f8df9061d429490a725",
+  "temperature_columns": [
+    "base_plate_temperature_calibrated_k",
+    "sample_temperature_calibrated_k"
+  ],
+  "primary_channel": 1,
+  "source_csv": "results/recooldown/merged_runs_2_to_6.csv",
+  "source_sha256": "a5bef4fbf2a4a71fc4b99a812d9661a04a8d3b2016c8edf7a50a558168f5138d",
+  "recomputed_columns": [
+    "base_plate_diode_voltage_mv",
+    "sample_diode_voltage_mv"
+  ],
+  "quality_counts": {
+    "base_plate": {
+      "provisional_linear": 11201
+    },
+    "sample": {
+      "outside_reference_range": 11068,
+      "provisional_linear": 133
+    }
+  }
+}

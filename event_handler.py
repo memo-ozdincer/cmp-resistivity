@@ -10,6 +10,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from lockin_recovery import LockInCommunicationError
+from sensor_calibration import SENSOR_FIELDS, empty_readings, named_reading
 
 FIELDS = [
     'sample_index', 'timestamp_utc', 'elapsed_s', 'read_duration_s', 'simulated',
@@ -36,7 +37,7 @@ class SampleError(RuntimeError):
 class EventHandler:
     def __init__(self, lock_in, thermo, *, current_a=None, voltage_component=None,
                  voltage_gain=1.0, area_m2=None, length_m=None, simulated=False,
-                 extra_channels=()):
+                 extra_channels=(), primary_channel=1, calibration=None):
         positive(voltage_gain, 'Voltage gain')
         if current_a is not None:
             positive(current_a, 'RMS current')
@@ -55,16 +56,20 @@ class EventHandler:
         self.current_a, self.component = current_a, voltage_component
         self.gain, self.area, self.length = voltage_gain, area_m2, length_m
         self.simulated = simulated
+        self.primary_channel, self.calibration = primary_channel, calibration
+        if primary_channel not in range(1, 5):
+            raise ValueError('Primary channel must be from 1–4.')
         self.extra_channels = tuple(extra_channels)
         if len(set(self.extra_channels)) != len(self.extra_channels) or any(
                 channel not in range(1, 5) for channel in self.extra_channels):
             raise ValueError('Extra channels must be distinct channel numbers from 1–4.')
-        self.fields = FIELDS + [field for channel in self.extra_channels for field in
+        self.fields = FIELDS + SENSOR_FIELDS + [field for channel in self.extra_channels for field in
             (f'diode_ch{channel}_voltage_mv', f'temperature_ch{channel}_reported_k')]
 
     def sample(self, start):
         sample_start = time.monotonic()
         row = dict.fromkeys(self.fields, '')
+        row.update(empty_readings(self.calibration))
         row.update(timestamp_utc=datetime.now(timezone.utc).isoformat(),
                    elapsed_s=sample_start - start, simulated=self.simulated,
                    temperature_calibration='unverified_instrument_curve',
@@ -74,9 +79,11 @@ class EventHandler:
                    voltage_contact_spacing_m=self.length if self.length is not None else '')
         try:
             row['diode_voltage_mv'] = 1000 * self.thermo.get_V()
+            row.update(named_reading(self.calibration, self.primary_channel, row['diode_voltage_mv']))
             row['temperature_reported_k'] = self.thermo.get_T()
             for channel in self.extra_channels:
                 row[f'diode_ch{channel}_voltage_mv'] = 1000 * self.thermo.get_V(channel)
+                row.update(named_reading(self.calibration, channel, row[f'diode_ch{channel}_voltage_mv']))
                 row[f'temperature_ch{channel}_reported_k'] = self.thermo.get_T(channel)
             if self.lock_in is None:
                 row['quality'] = 'temperature_only'

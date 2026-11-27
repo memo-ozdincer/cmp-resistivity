@@ -10,6 +10,10 @@
 - `run.ch1.calibrated.csv.calibration.json`: reference intervals, spread, model,
   coefficients and limits. Preserve with the derived output.
 
+Live acquisition now also uses the [provisional named sensor profile](sensor-calibration.md).
+It adds separate sample and base plate temperature columns; original reported temperatures
+remain unverified instrument readings.
+
 Raw readings do not depend on having completed calibration. Start at room
  temperature and keep logging through the cold plateau and heating. Each diode
 needs its own independently identified reference pairs.

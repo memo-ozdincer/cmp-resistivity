@@ -11,6 +11,7 @@ import time
 
 from event_handler import EventHandler, positive
 from run_support import keep_awake, write_metadata
+from sensor_calibration import DEFAULT_PROFILE, SENSORS, load_profile, profile_metadata
 
 
 class SimulatedThermo:
@@ -62,6 +63,9 @@ def parser():
     timing.add_argument('--duration', type=float, default=60, help='Duration in seconds (default: 60)')
     timing.add_argument('--continuous', action='store_true', help='Run until Ctrl-C; no duration limit')
     p.add_argument('--sensor-name', default='unidentified', help='Physical location of primary diode')
+    p.add_argument('--calibration-file', type=Path, default=DEFAULT_PROFILE,
+                   help='Sensor profile JSON; default is the provisional ch1 base plate/ch2 sample profile')
+    p.add_argument('--raw-temperatures', action='store_true', help='Disable derived sensor temperatures')
     p.add_argument('--extra-channels', nargs='+', type=int, choices=range(1, 5), default=[],
                    help='Additional connected/excited SIM922 channels to log')
     p.add_argument('--notes', default='', help='Sample, terminal map, pressure, phase and current notes')
@@ -106,6 +110,18 @@ def list_devices():
 
 
 def display(row):
+    if any(row.get(f'{name}_calibration_quality') not in ('disabled', None) for name in SENSORS):
+        readings = []
+        for name in SENSORS:
+            voltage = row.get(f'{name}_diode_voltage_mv', '')
+            temperature = row.get(f'{name}_temperature_calibrated_k', '')
+            readings.append(f"{name}[ch{row.get(f'{name}_diode_channel', '')}]="
+                f"{f'{float(voltage):.3f}' if voltage != '' else '--'} mV, "
+                f"{f'{temperature:.2f}' if temperature != '' else '--'} K "
+                f"({row.get(f'{name}_calibration_quality', '')})")
+        print(f"{row['elapsed_s']:.2f}s  " + ' | '.join(readings) +
+              f"  X={row['lockin_x_v']} V Y={row['lockin_y_v']} V {row['quality']}", flush=True)
+        return
     print(f"{row['elapsed_s']:.2f}s  diode={row['diode_voltage_mv']} mV  "
           f"T_reported={row['temperature_reported_k']} K  "
           f"X={row['lockin_x_v']} V  Y={row['lockin_y_v']} V  "
@@ -120,8 +136,14 @@ def main(argv=None):
         return 0
     options = dict(current_a=args.current_a, voltage_component=args.voltage_component,
                    voltage_gain=args.voltage_gain, area_m2=args.area_m2,
-                   length_m=args.length_m, simulated=args.simulate, extra_channels=args.extra_channels)
+                   length_m=args.length_m, simulated=args.simulate, extra_channels=args.extra_channels,
+                   primary_channel=args.channel)
     try:
+        profile = None if args.raw_temperatures else load_profile(args.calibration_file)
+        options['calibration'] = profile
+        if args.sensor_name == 'unidentified' and profile is not None:
+            args.sensor_name = next((name for name, sensor in profile['sensors'].items()
+                                     if sensor['channel'] == args.channel), 'unidentified')
         positive(args.duration, 'Duration')
         positive(args.period, 'Period')
         positive(args.console_every, 'Console interval')
@@ -138,7 +160,7 @@ def main(argv=None):
         if args.temperature_only and args.current_a is not None:
             raise ValueError('Temperature-only mode cannot calculate resistance.')
         EventHandler(None, None, **options)  # Validate before any connection.
-    except ValueError as exc:
+    except (ValueError, OSError, KeyError, TypeError) as exc:
         p.error(str(exc))
     prefix = 'SIMULATED_' if args.simulate else ''
     path = args.output or Path('data/runs') / (
@@ -158,7 +180,8 @@ def main(argv=None):
                 'simulated': args.simulate, 'arguments': vars(args).copy(),
                 'platform': platform.platform(), 'python_version': sys.version,
                 'current_source': 'fixed_user_assumption' if args.current_a is not None else 'not_logged',
-                'temperature_calibration': 'unverified instrument curve; no correction applied',
+                'temperature_calibration': 'temperature_reported_k fields retain unverified instrument curve; named temperatures use sensor_calibration profile',
+                'sensor_calibration': profile_metadata(profile, args.calibration_file) if profile is not None else None,
                 'sampling': 'sequential queries; elapsed_s is sample start, read_duration_s is query span'}
     exit_code = 0
     owns_metadata = False
@@ -216,7 +239,14 @@ def main(argv=None):
             metadata.update(lockin_identity=lockin_identity, thermo_identity=thermo.identity)
             handler = EventHandler(lockin, thermo, **options)
             print(f'{lockin_identity}\n{thermo.identity}')
-            print('Temperature is the unverified instrument reading; diode voltage is saved separately.')
+            print('temperature_reported_k fields preserve the unverified SIM922 curve; raw diode voltages are saved.')
+            if profile is not None:
+                print(f"Named sensor temperatures use {profile['id']}: PROVISIONAL linear calibration.")
+                for name, sensor in profile['sensors'].items():
+                    print(f"{name} ch{sensor['channel']}: {sensor['warm']['voltage_mv']:.6g} mV at "
+                          f"{sensor['warm']['temperature_k']:.2f} K; {sensor['cold']['voltage_mv']:.6g} mV at "
+                          f"{sensor['cold']['temperature_k']:.2f} K (provisional; see metadata assumptions).")
+                print('Values outside reference ranges are blank and flagged; raw readings are retained.')
             print('Current is not automatically read from the scope; document MON OUT checks separately.')
             if args.check:
                 print(json.dumps(metadata, indent=2, default=str))
@@ -228,7 +258,7 @@ def main(argv=None):
                     pass
                 owns_metadata = True
                 metadata.update(status='running', rows=0, output=str(path.resolve()),
-                                schema_version=2)
+                                schema_version=3)
                 write_metadata(metadata_path, metadata)
                 print(f'Saving to {path.resolve()} (Ctrl-C stops and preserves saved rows).')
                 print('Use mark_run.py in a SECOND terminal to timestamp reference intervals and events.')

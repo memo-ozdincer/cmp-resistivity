@@ -118,7 +118,9 @@ class BackupTests(unittest.TestCase):
             self.assertGreaterEqual(len(observations), 2)
             self.assertFalse(backup.thread.is_alive())
             with zipfile.ZipFile(io.BytesIO(api.content)) as archive:
-                self.assertEqual(json.loads(archive.read('SIMULATED_test.csv.json'))['status'], 'complete')
+                final_metadata = json.loads(archive.read('SIMULATED_test.csv.json'))
+                self.assertEqual(final_metadata['status'], 'complete')
+                self.assertEqual(final_metadata['sensor_calibration']['profile']['sensors']['sample']['channel'], 2)
                 self.assertEqual(archive.read('SIMULATED_test.csv'), path.read_bytes())
 
     def test_auth_failure_before_hardware_and_no_credentials_in_errors(self):

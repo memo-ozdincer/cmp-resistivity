@@ -1,7 +1,7 @@
-"""Offline calibration helpers. Nothing is fitted or uploaded on import.
+"""Legacy calibration helpers. Nothing is fitted or uploaded on import.
 
-The old reference points remain available for comparison only. They are not
-applied by acquisition. The new independent point is insufficient for a slope.
+Historical constants remain for comparison only. Named live temperatures use
+sensor_calibration.py and calibrations/recooldown-provisional.json instead.
 """
 import math
 
@@ -45,6 +45,7 @@ def temperature_from_mv(voltage_mv, c1, c2):
 
 
 if __name__ == '__main__':
-    print('Calibration deferred. No instrument settings have been changed.')
-    print('Historical candidate only, not automatically applied (K, mV):', CURRENT_REFERENCE_POINT)
-    print('A second reference is needed before fitting a new calibration.')
+    print('Named provisional live calibration is loaded by daq_example.py.')
+    print('Profile: calibrations/recooldown-provisional.json; no instrument curve is rewritten.')
+    print('Export older runs with: uv run python sensor_calibration.py RUN.csv')
+    print('Historical candidate below is not used by the live profile (K, mV):', CURRENT_REFERENCE_POINT)

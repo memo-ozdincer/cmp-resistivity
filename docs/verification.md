@@ -56,3 +56,16 @@ validation. Raw data reside in data/preliminary and have not been changed.
 - Automated scope RMS current logging (not implemented in the main loop).
 - Hardware auto-reconnect (not implemented; error stops with a preserved partial row).
 - Heating/control safety: logger does not operate or shut down heater equipment.
+
+## Named provisional sensor calibration (2026-11-27)
+
+- 38 local hardware-free tests pass, including separate sensor endpoints,
+  swapped primary/extra channel order, range flags, partial read preservation,
+  offline reprocessing and backup of the full calibration profile.
+- A clearly labelled synthetic live run was uploaded to main and downloaded:
+  CSV bytes, named temperature fields, profile contents and final metadata matched.
+- All 11,201 source rows/columns remain intact in the new both-sensor export.
+  Raw archive hashes, report links and ZIP contents were verified.
+- These checks verify software behaviour. Sample warm temperature is assumed
+  23.5 C, sample cold voltage is approximately 619 mV, and cold sensor equilibrium
+  remains an assumption. Profile provenance and per-sensor range flags are retained.

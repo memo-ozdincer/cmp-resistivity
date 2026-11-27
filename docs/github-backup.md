@@ -56,6 +56,9 @@ changing its other settings. Default cadence is 300 seconds; customize with
 selects a different repository. Authentication/write access is checked before
 connecting to hardware; missing credentials do not silently start an unbacked run.
 
+Named temperatures are now computed using the [provisional sensor profile](sensor-calibration.md),
+and its full contents are included in run metadata.
+
 Local CSV rows are still flushed and fsynced first. The first saved sample starts
 a background worker, which uploads an initial snapshot, periodic snapshots, and
 a final snapshot after Ctrl-C, normal completion or acquisition error. Each ZIP

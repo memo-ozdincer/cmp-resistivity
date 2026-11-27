@@ -276,7 +276,7 @@ summary['provisional_base_plate_calibration'] = calibration
 (OUT/'analysis_summary.json').write_text(json.dumps(summary,indent=2,allow_nan=False)+'\n')
 
 fig,axes=plt.subplots(2,1,figsize=(11.5,7),sharex=True,layout='constrained')
-fig.suptitle('Provisional base plate temperature and sample voltage\nCh. 1: 433.188 mV = 296.65 K; 981.166 mV = nominal 77 K. Ch. 2 uncalibrated.',fontsize=13)
+fig.suptitle('Provisional base plate temperature and sample voltage\nCh. 1: 433.188 mV = 296.65 K; 981.166 mV = nominal 77 K. Ch. 2 not shown.',fontsize=13)
 for run,frame in calibrated.groupby('source_run'):
  axes[0].plot(frame.timestamp,frame.base_plate_temperature_provisional_k,
               color=COLORS[run],lw=1.2,label=f'Run {run}')
@@ -299,17 +299,29 @@ ax.set_xlabel('Base plate temperature (K), provisional linear calibration')
 ax.set_ylabel('Lock-in X (mV)');ax.legend(ncol=3,loc='lower right',markerscale=2)
 ax.text(.03,.04,'Base plate axis is not calibrated sample temperature.\nNo transition temperature or zero-resistance state established.',
         transform=ax.transAxes,fontsize=9)
-save(fig,'07_voltage_vs_base_plate_temperature','Electrical voltage versus channel-1 base plate temperature; channel 2 sample calibration is still missing. The two-point linear model is provisional, and actual current was not logged.')
+save(fig,'07_voltage_vs_base_plate_temperature','Electrical voltage versus channel-1 base plate temperature; the separate provisional sample estimates are not used on this base plate axis. The two-point linear model is provisional, and actual current was not logged.')
 
 # Compact report with source provenance and no hidden calibration assumptions.
 rows=''.join(f"<tr><td>_{s['run']}</td><td>{s['rows']:,}</td><td>{s['span_s']/60:.2f}</td><td>{s['start_local'][11:19]}</td><td>{s['end_local'][11:19]}</td><td>{html.escape(s['metadata_status'])}</td></tr>" for s in run_stats)
+sensor_update = ''
+new_sensor_export = OUT/'both_sensors_calibrated_runs_2_to_6.csv'
+if new_sensor_export.exists():
+ sensor_update = ('<section><h2>Subsequent provisional sample calibration</h2>'
+  '<p>The logger now labels base_plate (ch1) and sample (ch2) explicitly. A separate provisional sample curve uses '
+  'user-reported 28.08 mV at assumed 23.5 °C and approximately 619 mV at nominal 77 K. '
+  'These references are approximate, not independently verified. The existing figures below use the base plate curve only.</p>'
+  '<p><a href="both_sensors_calibrated_runs_2_to_6.csv">Both-sensor temperature export</a> · '
+  '<a href="both_sensors_calibrated_runs_2_to_6.csv.calibration.json">Profile, assumptions and quality counts</a></p>'
+  '<p>Only 133 of the 11,201 archived sample readings lie inside the provisional voltage range; '
+  '11,068 are flagged outside_reference_range with blank derived temperatures and preserved raw voltages. '
+  'No below-77 K temperature is inferred by extrapolating those readings.</p></section>')
 sections=''.join(f'<section><img src="{name}.png" alt="{html.escape(caption)}"><p>{html.escape(caption)}</p><p><a href="{name}.svg">Vector SVG</a></p></section>' for name,caption in plots)
 report=f'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Recooldown analysis</title>
 <style>body{{max-width:1100px;margin:35px auto;padding:0 22px;font:17px/1.55 system-ui;color:#17212b;background:#fafafa}}h1,h2{{line-height:1.2}}section{{background:white;border:1px solid #ddd;border-radius:8px;padding:20px;margin:24px 0}}img{{width:100%;height:auto}}table{{border-collapse:collapse;width:100%;font-size:15px}}td,th{{padding:9px;border-bottom:1px solid #ddd;text-align:left}}a{{color:#0067a3}}.note{{border-left:4px solid #d55e00;padding:10px 20px;background:#fff6ed}}li{{margin:8px 0}}</style>
 <h1>Recooldown analysis</h1><p>Runs _2–_6, 24 November 2026. All graph times are Toronto EST (UTC−5).</p>
 <p><strong>{len(all_data):,} rows</strong> span {summary['wall_span_hours']:.2f} hours of wall time, with {summary['recorded_segment_span_hours']:.2f} hours inside the recorded segments. {len(valid):,} rows contain complete electrical measurements with quality=ok.</p>
 <div class="note"><strong>A provisional base plate calibration is now provided at the user’s request.</strong> Channel 1 uses the measured 23.5 °C warm reference and the highest recorded voltage assigned nominal 77 K. LN2 equilibrium is assumed rather than independently verified. No current was logged. Channel 1 is the base plate; channel 2 is the sample, as confirmed by the user. The warm-reference audit below applies to channel 1 only. No transition temperature is inferred.</div>
-<h2>Main findings</h2><ul>
+{sensor_update}<h2>Main findings</h2><ul>
 <li>Base plate diode voltage rises from 940.447 mV to a maximum of 981.166 mV, then settles near 980.1 mV. Increasing diode voltage is consistent with cooling; the subsequent small decline is consistent with slight warming if sensor excitation remained stable.</li>
 <li>Initial/final median X falls from {first_x*1000:.2f} to {last_x*1000:.2f} mV, a {summary['x_fractional_drop']*100:.1f}% decrease. Voltage alone cannot distinguish resistance changes from current or wiring changes.</li>
 <li>There is no observed zero-voltage state. The electrical output occupies 50 µV levels; Y is 50 µV in every complete row. The metadata records 500 mV sensitivity, so resolution is coarse for this signal. No quantitative noise floor or zero-resistance bound is established.</li>

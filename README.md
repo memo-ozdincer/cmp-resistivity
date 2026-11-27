@@ -7,6 +7,8 @@ calibration is applied afterward using the same run's reference intervals.
 **Start here for the next lab session:** [collection runbook](docs/collection-runbook.md).
 On the lab PC, first follow [Windows and USB setup](docs/windows-setup.md).
 For automatic uploads, follow [GitHub data backups](docs/github-backup.md).
+The logger now includes [named sensor temperatures](docs/sensor-calibration.md)
+using the saved provisional sample and base plate calibration profile.
 The [recooldown analysis](analysis/README.md) and
 [graphs/data](results/recooldown/) include a provisional base plate calibration.
 
@@ -61,8 +63,8 @@ data/simulated/         old synthetic example; never use as experimental data
 data/runs/              new raw runs, metadata, markers and derived outputs
 ```
 
-Acquisition preserves instrument settings. Temperature display remains
-uncalibrated. The latest reported 0.1-ohm resistor check gave approximately
+Acquisition preserves instrument settings. Named temperatures use the provisional
+sensor profile; original reported-temperature columns retain the unverified instrument curve. The latest reported 0.1-ohm resistor check gave approximately
 0.114 ohm; driver distortion and grounding are **unresolved**, not a passed
 validation for the superconducting sample. Confirm them with the TA before
 relying on resistance results. Logging can still preserve the raw evidence.
@@ -79,6 +81,7 @@ relying on resistance results. Logging can still preserve the raw evidence.
 - `github_backup.py`: background GitHub run snapshots and manual upload/retry.
 - `mark_run.py`: timestamp lab events from a second terminal on the same PC.
 - `calibrate_run.py`: derive a NEW calibrated CSV from marked stable intervals.
+- `sensor_calibration.py`: named live temperature estimates and export of older runs.
 - `temp_calibration.py`: offline model helpers and clearly qualified historical points.
 
 ```sh
