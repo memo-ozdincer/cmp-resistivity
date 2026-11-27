@@ -1,5 +1,8 @@
 # CMP resistivity lab
 
+**[Complete experiment notes (NOTES.md)](NOTES.md)** — consolidated theory, apparatus,
+wiring, calibration, software fixes, data collection and results.
+
 Measure lock-in voltage and temperature-diode voltage during cooling and warming
 of a BSCCO sample. Python + **uv**. Raw voltages are saved first; temperature
 calibration is applied afterward using the same run's reference intervals.
