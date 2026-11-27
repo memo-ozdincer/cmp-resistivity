@@ -30,12 +30,16 @@ class SensorCalibrationTests(unittest.TestCase):
                 self.assertAlmostEqual(row[f'{name}_temperature_calibrated_k'], expected)
                 self.assertEqual(row[f'{name}_calibration_quality'], 'provisional_linear')
 
-    def test_outside_range_and_invalid_voltage_not_silently_extrapolated(self):
+    def test_linear_extrapolation_and_invalid_voltage(self):
         profile = load_profile()
-        for voltage in [620, 693, 28, 0]:
-            row = named_reading(profile, 2, voltage)
-            self.assertEqual(row['sample_temperature_calibrated_k'], '')
-            self.assertEqual(row['sample_calibration_quality'], 'outside_reference_range')
+        for channel, name, voltage, warm, cold in [
+                (1, 'base_plate', 431.594, 433.18815384615385, 981.166),
+                (2, 'sample', 27.461, 28.08, 619.0),
+                (2, 'sample', 693, 28.08, 619.0)]:
+            row = named_reading(profile, channel, voltage)
+            expected = 296.65 + (voltage-warm)*(77-296.65)/(cold-warm)
+            self.assertAlmostEqual(row[f'{name}_temperature_calibrated_k'], expected)
+            self.assertEqual(row[f'{name}_calibration_quality'], 'extrapolated')
         self.assertEqual(named_reading(profile, 2, float('nan'))['sample_calibration_quality'], 'invalid_voltage')
 
     def test_reversed_primary_and_raw_instrument_values_preserved(self):

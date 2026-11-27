@@ -48,7 +48,7 @@ For each `base_plate` and `sample` prefix:
 - `_diode_channel`: physical SIM922 channel.
 - `_diode_voltage_mv`: named copy of the measured diode voltage.
 - `_temperature_calibrated_k`: provisional calibrated temperature, in kelvin.
-- `_calibration_quality`: `provisional_linear`, `outside_reference_range`,
+- `_calibration_quality`: `provisional_linear`, `extrapolated`,
   `invalid_voltage`, `not_read` or `disabled`.
 
 Original `diode_voltage_mv`, `diode_ch2_voltage_mv`, and `temperature*_reported_k`
@@ -57,14 +57,10 @@ unverified curve; use the explicitly named calibrated columns for this profile.
 Electrical `quality=ok` does not establish temperature-calibration validity;
 check each sensor's `_calibration_quality` as well.
 
-Outside each pair of reference voltages, the calibrated value is blank and
-flagged. In particular, sample voltages **above 619 mV** exceed this provisional
-cold reference. The archive has **11,068 of 11,201 sample rows outside** this
-profile's range; only 133 are inside. This is the consequence of the approximate
-619 mV anchor, not missing raw data. Do not silently assign all such readings
-77 K or infer temperatures below the assumed LN2 reference. Likewise, base plate
-431.9 mV is beyond its warm reference, so its derived value is flagged/blank.
-No transition temperature or uncertainty bound is established by these models.
+The same linear equation is evaluated outside the reference interval. These
+temperatures are labelled `extrapolated` rather than discarded. They are
+estimates, including any calculated values below 77 K. Raw voltages remain
+available and the extrapolation does not establish physical LN2 equilibrium.
 
 Use `--calibration-file PATH.json` for a revised profile. Use `--raw-temperatures`
 to disable the derived named temperature columns. Keep existing profiles with

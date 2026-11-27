@@ -1,5 +1,5 @@
 {
-  "id": "recooldown-provisional-2026-11-27",
+  "id": "recooldown-provisional-linear-v2",
   "status": "provisional",
   "model": "linear",
   "sensors": {
@@ -21,7 +21,7 @@
     "Both cold references assume sensor equilibrium at nominal 77 K; no pressure correction.",
     "Sample cold voltage is approximate, not the mean of an identified stable interval.",
     "Sample warm temperature is assumed to be the earlier reported 23.5 C.",
-    "Base plate and sample use different curves. Values outside each reference interval are left blank and flagged; raw readings are always preserved.",
+    "Base plate and sample use different curves. Values outside each reference interval are calculated by linear extrapolation and labelled extrapolated; raw readings are always preserved.",
     "The later base plate reading near 431.9 mV is preserved as an observation, not substituted for the recorded 23.5 C reference."
   ]
 }

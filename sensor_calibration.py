@@ -51,15 +51,12 @@ def named_reading(profile, channel, voltage_mv):
         try:
             voltage = float(voltage_mv)
             if math.isfinite(voltage):
-                # Tiny endpoint tolerance covers volts -> millivolts round-off only.
-                tolerance = 1e-9
-                if warm['voltage_mv']-tolerance <= voltage <= cold['voltage_mv']+tolerance:
-                    params = fit_two_points((warm['temperature_k'], warm['voltage_mv']),
-                                            (cold['temperature_k'], cold['voltage_mv']))
-                    temperature = temperature_from_mv(voltage, *params)
-                    quality = 'provisional_linear'
-                else:
-                    quality = 'outside_reference_range'
+                params = fit_two_points((warm['temperature_k'], warm['voltage_mv']),
+                                        (cold['temperature_k'], cold['voltage_mv']))
+                temperature = temperature_from_mv(voltage, *params)
+                quality = ('provisional_linear' if
+                           warm['voltage_mv'] - 1e-9 <= voltage <= cold['voltage_mv'] + 1e-9
+                           else 'extrapolated')
         except (ValueError, TypeError):
             pass
         result.update({f'{name}_diode_channel': channel,

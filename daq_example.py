@@ -246,7 +246,7 @@ def main(argv=None):
                     print(f"{name} ch{sensor['channel']}: {sensor['warm']['voltage_mv']:.6g} mV at "
                           f"{sensor['warm']['temperature_k']:.2f} K; {sensor['cold']['voltage_mv']:.6g} mV at "
                           f"{sensor['cold']['temperature_k']:.2f} K (provisional; see metadata assumptions).")
-                print('Values outside reference ranges are blank and flagged; raw readings are retained.')
+                print('Linear calibration extrapolates beyond reference points; those estimates are labelled extrapolated.')
             print('Current is not automatically read from the scope; document MON OUT checks separately.')
             if args.check:
                 print(json.dumps(metadata, indent=2, default=str))
