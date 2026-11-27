@@ -100,7 +100,15 @@ processed at a time. No sensor curve is uploaded to the shared SIM922.
 - Old supplied points **297.6 K / 435.9 mV** and **77 K / 992 mV** belong to previous
   data/code; they are not references collected by this team in this session.
 - About 990 mV at 77 K is the handout's expectation, not a measured cold point.
-- No valid new two-point curve has yet been fitted or applied to hardware.
+- On 2026-11-27, the user confirmed channel 1 = base plate and channel 2 = sample,
+  and requested a provisional offline curve for the recooldown data. Warm reference:
+  23.5 C (296.65 K), mean 433.188154 mV in run _1. Cold reference: highest recorded
+  channel-1 voltage, 981.166 mV in run _3, assigned nominal 77 K per instruction.
+  Linear model: V_mV = 1173.263856 - 2.494777356*T_K. This assumes base plate LN2
+  equilibrium and is not an independently validated temperature scale. It does
+  not calibrate channel 2. Raw readings and instrument settings are unchanged.
+  Reproduce with [analysis instructions](../analysis/README.md); results and
+  reference provenance are in `results/recooldown/`.
 
 ## Long-run storage
 

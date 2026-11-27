@@ -7,6 +7,8 @@ calibration is applied afterward using the same run's reference intervals.
 **Start here for the next lab session:** [collection runbook](docs/collection-runbook.md).
 On the lab PC, first follow [Windows and USB setup](docs/windows-setup.md).
 For automatic uploads, follow [GitHub data backups](docs/github-backup.md).
+The [recooldown analysis](analysis/README.md) and
+[graphs/data](results/recooldown/) include a provisional base plate calibration.
 
 ## Commands
 

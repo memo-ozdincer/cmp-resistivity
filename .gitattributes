@@ -1,0 +1,2 @@
+# Preserve original experimental files byte for byte on Windows and Mac.
+data/recooldown/raw/** -text

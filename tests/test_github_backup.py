@@ -49,7 +49,7 @@ class BackupTests(unittest.TestCase):
         path = Path(directory) / 'run.csv'
         path.write_bytes(b'sample_index,value\r\n0,1\r\n1,incomplete')
         path.with_suffix('.csv.json').write_text('{"status":"running"}')
-        path.with_suffix('.csv.events.jsonl').write_text('{"label":"cold"}\n{"partial":')
+        path.with_suffix('.csv.events.jsonl').write_bytes(b'{"label":"cold"}\n{"partial":')
         (path.parent / 'unrelated-secret.txt').write_text('must not upload')
         return path
 

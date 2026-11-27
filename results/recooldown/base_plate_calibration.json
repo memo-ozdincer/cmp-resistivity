@@ -1,0 +1,44 @@
+{
+  "channel": 1,
+  "sensor": "base plate",
+  "status": "provisional",
+  "model": "linear",
+  "equation": "V_mV = c1_mV - c2_mV_per_K * T_K",
+  "c1_mv": 1173.2638563799053,
+  "c2_mv_per_k": 2.494777355583184,
+  "c3_mv": 0,
+  "warm": {
+    "start_utc": "2026-11-24T14:50:31.077889+00:00",
+    "end_utc": "2026-11-24T14:50:44.101251+00:00",
+    "n": 13,
+    "first_mv": 433.19,
+    "last_mv": 433.187,
+    "mean_mv": 433.18815384615385,
+    "sd_mv": 0.0019935794376749597,
+    "temperature_k": 296.65,
+    "temperature_c": 23.5,
+    "source_file": "run_20261124_1.csv"
+  },
+  "cold": {
+    "temperature_k": 77.0,
+    "voltage_mv": 981.166,
+    "source_file": "run_20261124_3.csv",
+    "source_row": 4141,
+    "timestamp_utc": "2026-11-24T17:13:50.789920+00:00",
+    "selection": "highest recorded channel-1 voltage, per user instruction",
+    "assumption": "base plate at nominal LN2 boiling temperature, 77 K",
+    "nearby_60s_count": 60,
+    "nearby_60s_mean_mv": 981.1618833333333,
+    "nearby_60s_sd_mv": 0.0014967950695640004
+  },
+  "temperature_first_k": 93.32169696781683,
+  "temperature_last_k": 77.42689180163381,
+  "limitations": [
+    "Highest voltage is a user-selected cold-reference assumption, not independent equilibrium verification.",
+    "Linear two-point interpolation does not validate intermediate diode temperatures.",
+    "No pressure correction or physical temperature uncertainty is established.",
+    "Channel 2 (sample) is NOT calibrated by this curve.",
+    "Base plate temperature is not automatically sample temperature.",
+    "No extrapolation, current calibration or transition-temperature extraction."
+  ]
+}

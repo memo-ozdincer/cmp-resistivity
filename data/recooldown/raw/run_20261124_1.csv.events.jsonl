@@ -1,0 +1,8 @@
+{"timestamp_utc": "2026-11-24T14:44:40.889627+00:00", "label": "run_1", "note": ""}
+{"timestamp_utc": "2026-11-24T14:50:31.077889+00:00", "label": "warm-start", "note": "Surface temperature = 23.5 C"}
+{"timestamp_utc": "2026-11-24T14:50:44.101251+00:00", "label": "warm-end", "note": ""}
+{"timestamp_utc": "2026-11-24T15:10:15.310399+00:00", "label": "cold-start", "note": ""}
+{"timestamp_utc": "2026-11-24T15:16:34.014425+00:00", "label": "cold-end", "note": ""}
+{"timestamp_utc": "2026-11-24T15:22:29.738213+00:00", "label": "cold-start-second-morestable", "note": ""}
+{"timestamp_utc": "2026-11-24T15:25:59.677783+00:00", "label": "cold-start-second-morestable-2", "note": ""}
+{"timestamp_utc": "2026-11-24T15:34:36.296093+00:00", "label": "nitrogen-going-in", "note": ""}

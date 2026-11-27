@@ -1,0 +1,176 @@
+{
+  "selection": "run_20261124_2.csv through run_20261124_6.csv",
+  "total_rows": 11201,
+  "complete_ok_electrical_rows": 11197,
+  "partial_error_rows": 4,
+  "first_local": "2026-11-24T10:43:33.273480-05:00",
+  "last_local": "2026-11-24T15:07:43.417856-05:00",
+  "wall_span_hours": 4.402817882222222,
+  "recorded_segment_span_hours": 3.1102755847222228,
+  "gaps": [
+    {
+      "from_run": 2,
+      "to_run": 3,
+      "start_utc": "2026-11-24T16:04:25.270511+00:00",
+      "end_utc": "2026-11-24T16:04:49.789230+00:00",
+      "seconds": 24.518719
+    },
+    {
+      "from_run": 3,
+      "to_run": 4,
+      "start_utc": "2026-11-24T18:43:08.791161+00:00",
+      "end_utc": "2026-11-24T19:58:53.131376+00:00",
+      "seconds": 4544.340215
+    },
+    {
+      "from_run": 4,
+      "to_run": 5,
+      "start_utc": "2026-11-24T19:59:04.130256+00:00",
+      "end_utc": "2026-11-24T20:00:00.590017+00:00",
+      "seconds": 56.459761
+    },
+    {
+      "from_run": 5,
+      "to_run": 6,
+      "start_utc": "2026-11-24T20:06:36.594689+00:00",
+      "end_utc": "2026-11-24T20:07:04.428265+00:00",
+      "seconds": 27.833576
+    }
+  ],
+  "reference_audit": {
+    "warm": {
+      "start_utc": "2026-11-24T14:50:31.077889+00:00",
+      "end_utc": "2026-11-24T14:50:44.101251+00:00",
+      "n": 13,
+      "first_mv": 433.19,
+      "last_mv": 433.187,
+      "mean_mv": 433.18815384615385,
+      "sd_mv": 0.0019935794376749597
+    },
+    "cold": {
+      "start_utc": "2026-11-24T15:10:15.310399+00:00",
+      "end_utc": "2026-11-24T15:16:34.014425+00:00",
+      "n": 379,
+      "first_mv": 769.892,
+      "last_mv": 838.2570000000001,
+      "mean_mv": 806.4568390501319,
+      "sd_mv": 19.762100570958342
+    }
+  },
+  "warm_reference_c_from_note": 23.5,
+  "cold_reference_validated": false,
+  "primary_voltage_min_mv": 940.447,
+  "primary_voltage_max_mv": 981.166,
+  "primary_peak_local": "2026-11-24T12:13:50.789920-05:00",
+  "channel2_min_mv": 610.22,
+  "channel2_max_mv": 693.019,
+  "x_first_median_mv": 0.75,
+  "x_last_median_mv": 0.35,
+  "x_fractional_drop": 0.5333333333333333,
+  "x_unique_levels_v": [
+    0.0003,
+    0.00035,
+    0.0004,
+    0.00045,
+    0.0005,
+    0.00055,
+    0.0006,
+    0.00065,
+    0.0007,
+    0.00075
+  ],
+  "y_unique_levels_v": [
+    5e-05
+  ],
+  "smallest_observed_x_step_uv": 49.999999999999915,
+  "current_from_files_a": null,
+  "physical_channel_mapping_verified": true,
+  "channel_mapping_source": "User confirmed channel 1 base plate, channel 2 sample",
+  "channel_mapping": {
+    "1": "base plate",
+    "2": "sample"
+  },
+  "limitations": [
+    "No independently established cold reference in archive.",
+    "User confirmed channel 1 is base plate and channel 2 is sample; legacy CLI sample label refers to channel 1.",
+    "No current measurements or sample geometry in files.",
+    "No observed zero-voltage state; Tc cannot be extracted from these plots.",
+    "Four partial error rows excluded from electrical plots; their valid diode readings retained.",
+    "No interpolation across file gaps; timestamps remain absolute.",
+    "Metadata for _6 says running and 32 rows; actual CSV has 40 rows, consistent with an unfinished snapshot."
+  ],
+  "analysis_environment": {
+    "python": "3.14.6",
+    "pandas": "3.0.1",
+    "numpy": "2.4.2",
+    "matplotlib": "3.10.8"
+  },
+  "source_sha256": {
+    "20261124T143139_598664Z.csv": "03c39cc36c8c9ff3e0f4dfe80f9f56dde30dc80fb7f9a9eda1a3a84cce43522f",
+    "20261124T143139_598664Z.csv.json": "d99cb9abdd5748db4aea80572356161203a48be4e70662cb84c488abdfc8474e",
+    "SIMULATED_20261124T142210_526206Z.csv": "db30901aa839c2584119734888f046a6909b065f646b788971e25b5def4cc21c",
+    "SIMULATED_20261124T142210_526206Z.csv.json": "19eac50cb74815476bb0e90ed8a9f97bff9eaa478baa2e3338a1251a7e900266",
+    "run_20261124.csv": "52318c16e266ec3c13dd544dc50ff3bd4ee18d387c3c7929e84426cd865829c9",
+    "run_20261124.csv.events.jsonl": "1b80a421a2e0e9c3b04be23cab57a7523ff0c37a40c1362e31d84735109d0203",
+    "run_20261124.csv.json": "11138086c355c794c976cd8241004e3df9bee9bf17a330d2dc3d4ad80262af31",
+    "run_20261124_1.csv": "14a47eba86242a0258c5843e469234982828ce750f2f9cb7181326f0685423c2",
+    "run_20261124_1.csv.events.jsonl": "d43834e10acc5fe4d42871dbfcbe95aa6fbd1b6137c11bdb58e53d7789b8dcbc",
+    "run_20261124_1.csv.json": "ae0a1fc2208ab0ca969576f6c1c77e368d06e986c01d120a4d87382a5c97a4a1",
+    "run_20261124_2.csv": "e52580cb33332a0c7d67f0f1582f6cf6c33eddf6650fa270b718813f3735e8b6",
+    "run_20261124_2.csv.json": "7ba715aece5176b496271b65bcaabbb6af464976cd6b5e0b6c63c5f79bc96a79",
+    "run_20261124_3.csv": "65858259e002a73819de8fd8b4d6db26c550565ad3a92ab7fa48817ad1b22c1e",
+    "run_20261124_3.csv.events.jsonl": "e858c97bff26a2cde1023c1766a982798913135a89187ed3bd3d012e9909ef54",
+    "run_20261124_3.csv.json": "1a04fb804d6ad768143fad073a73d8b5071cd4ea45b51e08f51ba50892372b62",
+    "run_20261124_4.csv": "f952cf1f62518c08c7052285fc526eb131b75b5af6c75d3f5764da6a6a55f711",
+    "run_20261124_4.csv.events.jsonl": "f4676cf5c6871b37aaf8c3752a4d7e1cae324104f840c002189157f10008ce50",
+    "run_20261124_4.csv.json": "9956cdfcc4b541cae8e2f19ebc6a0e512a210a8d63fd1d522f14ff5866a5f946",
+    "run_20261124_5.csv": "252817bd1c942c960fed52b3249d7fb3934da5232a36742896b5b78d6970a8bf",
+    "run_20261124_5.csv.json": "99db159239f28f29b74b357fdc1672ef3deb69bce3b25483aa1c58fd3b917cbd",
+    "run_20261124_6.csv": "30e8f9cf91986b36e3d195803ac510cdde83922f9822c4f20abd882e4376a11c",
+    "run_20261124_6.csv.json": "eab9fcaabdcf514c3fe177340264a5c1bafdca2cb6e4724669b6a29577e20203"
+  },
+  "provisional_base_plate_calibration": {
+    "channel": 1,
+    "sensor": "base plate",
+    "status": "provisional",
+    "model": "linear",
+    "equation": "V_mV = c1_mV - c2_mV_per_K * T_K",
+    "c1_mv": 1173.2638563799053,
+    "c2_mv_per_k": 2.494777355583184,
+    "c3_mv": 0,
+    "warm": {
+      "start_utc": "2026-11-24T14:50:31.077889+00:00",
+      "end_utc": "2026-11-24T14:50:44.101251+00:00",
+      "n": 13,
+      "first_mv": 433.19,
+      "last_mv": 433.187,
+      "mean_mv": 433.18815384615385,
+      "sd_mv": 0.0019935794376749597,
+      "temperature_k": 296.65,
+      "temperature_c": 23.5,
+      "source_file": "run_20261124_1.csv"
+    },
+    "cold": {
+      "temperature_k": 77.0,
+      "voltage_mv": 981.166,
+      "source_file": "run_20261124_3.csv",
+      "source_row": 4141,
+      "timestamp_utc": "2026-11-24T17:13:50.789920+00:00",
+      "selection": "highest recorded channel-1 voltage, per user instruction",
+      "assumption": "base plate at nominal LN2 boiling temperature, 77 K",
+      "nearby_60s_count": 60,
+      "nearby_60s_mean_mv": 981.1618833333333,
+      "nearby_60s_sd_mv": 0.0014967950695640004
+    },
+    "temperature_first_k": 93.32169696781683,
+    "temperature_last_k": 77.42689180163381,
+    "limitations": [
+      "Highest voltage is a user-selected cold-reference assumption, not independent equilibrium verification.",
+      "Linear two-point interpolation does not validate intermediate diode temperatures.",
+      "No pressure correction or physical temperature uncertainty is established.",
+      "Channel 2 (sample) is NOT calibrated by this curve.",
+      "Base plate temperature is not automatically sample temperature.",
+      "No extrapolation, current calibration or transition-temperature extraction."
+    ]
+  }
+}
