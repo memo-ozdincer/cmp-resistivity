@@ -40,7 +40,7 @@ class LockIn7270:
     ID_VENDOR = 2605
     ID_PRODUCT = 27
 
-    def __init__(self, cmds=None, timeout_ms=2000, terminator='status'):
+    def __init__(self, cmds=None, timeout_ms=2000, terminator='status', drain_before_identity=False):
         if terminator not in ('status', 'null'):
             raise ValueError('terminator must be status or null')
         self.timeout_ms = timeout_ms
@@ -64,6 +64,17 @@ class LockIn7270:
                 and usb.util.endpoint_type(e.bmAttributes) == usb.util.ENDPOINT_TYPE_BULK)
             if self.ep_in is None or self.ep_out is None:
                 raise RuntimeError('7270 bulk USB endpoints were not found.')
+            if drain_before_identity:
+                # A timed-out response may still be queued. Never use it as a new reading.
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    try:
+                        self.dev.read(self.ep_in.bEndpointAddress, self.ep_in.wMaxPacketSize,
+                                      timeout=250)
+                    except usb.core.USBTimeoutError:
+                        break
+                else:
+                    raise RuntimeError('USB input did not become quiet; refusing to reconnect.')
             self.identity = self.query_safe('ID')
             if self.identity != '7270':
                 raise RuntimeError(f'Unexpected lock-in identity: {self.identity!r}')

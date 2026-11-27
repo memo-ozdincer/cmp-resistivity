@@ -48,6 +48,10 @@ def parser():
                    help='Match the 7270 USB Status menu; normally status')
     p.add_argument('--timeout-ms', type=int, default=2000,
                    help='7270 query timeout in milliseconds (default: 2000)')
+    p.add_argument('--recover-lockin', action='store_true',
+                   help='Native USB: log gaps and retry after timeouts, without changing settings')
+    p.add_argument('--reconnect-seconds', type=float, default=15,
+                   help='Minimum interval between lock-in reconnect attempts (default: 15)')
     p.add_argument('--lockin-port', help='7270 serial port; omitted means native USB')
     p.add_argument('--lockin-baud', type=int, default=9600)
     p.add_argument('--lockin-data-bits', type=int, choices=(7, 8), default=7)
@@ -65,6 +69,11 @@ def parser():
     p.add_argument('--allow-sleep', action='store_true', help='Disable automatic Windows idle-sleep prevention')
     p.add_argument('--period', type=float, default=1, help='Requested sample interval in seconds')
     p.add_argument('--output', type=Path, help='New CSV path (never overwrites); default: data/runs/<timestamp>.csv')
+    p.add_argument('--github-backup', action='store_true',
+                   help='Upload run snapshots to GitHub in the background (requires gh auth login)')
+    p.add_argument('--github-repo', default='memo-ozdincer/cmp-resistivity', help='Backup OWNER/REPO')
+    p.add_argument('--github-backup-seconds', type=float, default=300,
+                   help='Seconds between GitHub snapshots, minimum 30 (default: 300)')
     p.add_argument('--current-a', type=float, help='Independently measured sample RMS current in A')
     p.add_argument('--voltage-component', choices=('x', 'magnitude'),
                    help='x needs correct phase alignment; magnitude measures impedance magnitude')
@@ -117,6 +126,13 @@ def main(argv=None):
         positive(args.period, 'Period')
         positive(args.console_every, 'Console interval')
         positive(args.timeout_ms, 'Lock-in timeout')
+        positive(args.reconnect_seconds, 'Reconnect interval')
+        if not math.isfinite(args.github_backup_seconds) or args.github_backup_seconds < 30:
+            raise ValueError('GitHub backup interval must be at least 30 seconds.')
+        if args.github_backup and args.check:
+            raise ValueError('--github-backup needs a saved run, not --check.')
+        if args.recover_lockin and (args.lockin_port or args.temperature_only or args.simulate):
+            raise ValueError('--recover-lockin requires actual native USB lock-in acquisition.')
         if args.channel in args.extra_channels:
             raise ValueError('Primary channel must not be repeated in --extra-channels.')
         if args.temperature_only and args.current_a is not None:
@@ -130,6 +146,14 @@ def main(argv=None):
     metadata_path = path.with_suffix(path.suffix + '.json')
     if not args.check and (path.exists() or metadata_path.exists()):
         p.error(f'Output already exists: {path} or {metadata_path}')
+    backup = None
+    if args.github_backup:
+        from github_backup import GitHubBackup, GitHubError, validate_access
+        try:
+            validate_access(args.github_repo)  # Fail clearly before connecting to hardware.
+            backup = GitHubBackup(path, repo=args.github_repo, interval=args.github_backup_seconds)
+        except (GitHubError, ValueError) as exc:
+            p.error(str(exc))
     metadata = {'started_utc': datetime.now(timezone.utc).isoformat(),
                 'simulated': args.simulate, 'arguments': vars(args).copy(),
                 'platform': platform.platform(), 'python_version': sys.version,
@@ -170,6 +194,13 @@ def main(argv=None):
                                            'Review the lock-in front-panel settings.')
                     if int(settings['VMODE']) == 0:
                         raise RuntimeError('Lock-in voltage input is grounded (VMODE 0). Review input selection.')
+                    if args.recover_lockin:
+                        from lockin_recovery import RecoveringLockIn
+                        lockin = RecoveringLockIn(lockin,
+                            reconnect=lambda: LockIn7270(terminator=args.usb_terminator,
+                                timeout_ms=args.timeout_ms, drain_before_identity=True),
+                            expected_settings=settings, retry_seconds=args.reconnect_seconds)
+                        stack.callback(lockin.close)
                 thermo = stack.enter_context(SIM922(port=args.port, baud=args.baud,
                     module_no=args.module, channel=args.channel))
                 excitation = thermo.get_excitation()
@@ -207,11 +238,16 @@ def main(argv=None):
                     metadata['last_sample_utc'] = row['timestamp_utc']
                     metadata['last_quality'] = row['quality']
                     metadata['last_elapsed_s'] = row['elapsed_s']
+                    if backup is not None and backup.thread is None:
+                        backup.start()  # Network and ZIP work run off the sampling thread.
+                    if args.recover_lockin:
+                        metadata['lockin_reconnections'] = lockin.reconnections
+                        metadata['lockin_communication_failures'] = lockin.failures
                     now = time.monotonic()
-                    if now - last_heartbeat >= 10 or row['quality'] in ('error', 'interrupted'):
+                    if now - last_heartbeat >= 10 or row['quality'] in ('error', 'interrupted', 'lockin_unavailable'):
                         write_metadata(metadata_path, metadata)
                         last_heartbeat = now
-                    if now - last_console >= args.console_every or row['quality'] not in ('ok', 'temperature_only'):
+                    if now - last_console >= args.console_every or row['quality'] in ('error', 'interrupted'):
                         display(row)
                         last_console = now
                 handler.run(path, None if args.continuous else args.duration,
@@ -229,6 +265,8 @@ def main(argv=None):
             if owns_metadata:
                 metadata['finished_utc'] = datetime.now(timezone.utc).isoformat()
                 write_metadata(metadata_path, metadata)
+                if backup is not None and backup.thread is not None:
+                    backup.finish()  # Final metadata is on disk before the last snapshot.
     return exit_code
 
 

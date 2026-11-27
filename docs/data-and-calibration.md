@@ -39,8 +39,10 @@ needs its own independently identified reference pairs.
 
 `quality=ok` does not establish correct current, waveform, grounding, phase,
 calibration or sensor identity. Overload/reference warnings suppress derived
-resistance but preserve measured values. Any communication error stops acquisition
-with a partial error row rather than silently presenting stale data. Missing
+resistance but preserve measured values. By default a communication error stops
+acquisition with a partial error row. Opt-in native USB `--recover-lockin` keeps
+diode data with `lockin_unavailable` electrical quality flags while reconnecting;
+settings must match before electrical readings resume. Missing
 samples/interruptions must remain visible in analysis.
 
 Current is checked at CURR MON: I_RMS = V_MON_RMS / 1 ohm. Scope AC RMS on a
@@ -101,6 +103,9 @@ processed at a time. No sensor curve is uploaded to the shared SIM922.
 - No valid new two-point curve has yet been fitted or applied to hardware.
 
 ## Long-run storage
+
+Optional [GitHub backups](github-backup.md) upload run-only snapshots in the
+background. They preserve local-first recording and retry after network failure.
 
 Memory remains bounded: rows are written as collected, and calibration streams
 through the CSV. At ~1 Hz even a day is normally only tens of MB; actual size

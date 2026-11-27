@@ -34,7 +34,7 @@ def reference_stats(run, events, name, column, minimum):
     with run.open(newline='', encoding='utf-8') as stream:
         for row in csv.DictReader(stream):
             if start <= utc(row['timestamp_utc']) <= end:
-                if row['quality'] not in ('ok', 'temperature_only'):
+                if row['quality'] not in ('ok', 'temperature_only', 'lockin_unavailable'):
                     continue
                 try:
                     value = float(row[column])

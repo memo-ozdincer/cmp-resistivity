@@ -9,6 +9,7 @@ import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from lockin_recovery import LockInCommunicationError
 
 FIELDS = [
     'sample_index', 'timestamp_utc', 'elapsed_s', 'read_duration_s', 'simulated',
@@ -115,7 +116,8 @@ class EventHandler:
                 if self.area is not None:
                     row['resistivity_ohm_m'] = row['resistance_ohm'] * self.area / self.length
         except (Exception, KeyboardInterrupt) as exc:
-            row['quality'] = 'interrupted' if isinstance(exc, KeyboardInterrupt) else 'error'
+            row['quality'] = ('interrupted' if isinstance(exc, KeyboardInterrupt) else
+                              'lockin_unavailable' if isinstance(exc, LockInCommunicationError) else 'error')
             row['error'] = f'{type(exc).__name__}: {exc}'
             row['read_duration_s'] = time.monotonic() - sample_start
             raise SampleError(row, exc) from exc
@@ -153,7 +155,8 @@ class EventHandler:
                 if failure:
                     if failure.row['quality'] == 'interrupted':
                         raise KeyboardInterrupt from failure
-                    raise failure
+                    if not isinstance(failure.__cause__, LockInCommunicationError):
+                        raise failure
                 # Skip missed deadlines instead of burst-reading stale intervals.
                 elapsed = time.monotonic() - start
                 next_time = start + (math.floor(elapsed / sample_period) + 1) * sample_period

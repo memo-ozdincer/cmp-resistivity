@@ -6,6 +6,7 @@ calibration is applied afterward using the same run's reference intervals.
 
 **Start here for the next lab session:** [collection runbook](docs/collection-runbook.md).
 On the lab PC, first follow [Windows and USB setup](docs/windows-setup.md).
+For automatic uploads, follow [GitHub data backups](docs/github-backup.md).
 
 ## Commands
 
@@ -21,7 +22,7 @@ Replace `COM4` below with the SIM900 port actually found on Windows:
 
 ```sh
 uv run python daq_example.py --port COM4 --check
-uv run python daq_example.py --port COM4 --continuous --period 1 --sensor-name "sample plate - VERIFY" --output data/runs/run_20261124.csv
+uv run python daq_example.py --port COM4 --channel 1 --extra-channels 2 --continuous --period 1 --sensor-name "base plate" --notes "ch1 base plate; ch2 sample" --github-backup
 ```
 
 Ctrl-C stops and preserves written rows. The script prevents automatic idle sleep
@@ -35,6 +36,7 @@ port was `/dev/cu.usbserial-BG02V860`; use that instead of COM4 if still present
 |---|---|
 | [Collection runbook](docs/collection-runbook.md) | Before cooling, continuous logging, reference markers, heating, stopping |
 | [Windows setup](docs/windows-setup.md) | uv installation, COM ports, native USB versus serial, driver troubleshooting |
+| [GitHub backups](docs/github-backup.md) | Windows login, background snapshots, offline retry and downloads |
 | [Experiment notes](docs/experiment-notes.md) | Theory, equipment roles, four-wire explanation, all reported observations and corrections |
 | [Wiring worksheet](docs/wiring-worksheet.md) | Blank terminal and sensor map to verify with the apparatus/TA |
 | [Data and calibration](docs/data-and-calibration.md) | Units, schemas, two-point models, derived output, limitations |
@@ -72,6 +74,7 @@ relying on resistance results. Logging can still preserve the raw evidence.
 - `oscilloscope.py`: optional scope helper; NOT part of automatic current logging.
 - `oscilliscope.py`: compatibility import for the old spelling.
 - `run_support.py`: atomic metadata and temporary Windows idle-sleep prevention.
+- `github_backup.py`: background GitHub run snapshots and manual upload/retry.
 - `mark_run.py`: timestamp lab events from a second terminal on the same PC.
 - `calibrate_run.py`: derive a NEW calibrated CSV from marked stable intervals.
 - `temp_calibration.py`: offline model helpers and clearly qualified historical points.

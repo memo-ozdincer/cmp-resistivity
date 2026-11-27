@@ -1,5 +1,8 @@
 # Windows setup and USB connections
 
+For automatic uploads while recording, see [GitHub data backups](github-backup.md).
+Install/authenticate GitHub CLI on this Windows PC; the Mac login does not carry over.
+
 ## uv and Python
 
 Yes, uv runs on Windows. Use native **PowerShell**, not WSL, for this USB setup.
@@ -59,8 +62,8 @@ uv run python daq_example.py --list-devices
    not an assigned lab-PC port. The observed FTDI adapter has serial `BG02V860`.
 4. If no COM port appears, check Windows Update / the lab's approved FTDI driver
    installation. Manufacturer source: https://ftdichip.com/drivers/vcp-drivers/ .
-5. Known mainframe baud: **9600**, SIM922 **slot 7**. Channel-to-sensor mapping
-   still needs tracing. The program identifies both mainframe and module.
+5. Known mainframe baud: **9600**, SIM922 **slot 7**. User-confirmed mapping:
+   **channel 1 = base plate; channel 2 = sample**. The program identifies both mainframe and module.
 
 ### Native 7270 USB: test the existing driver first
 
