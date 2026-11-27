@@ -32,7 +32,10 @@ class RecoveryTests(unittest.TestCase):
             path = Path(directory) / 'run.csv'
             def saved(row):
                 recovery.next_attempt = 0
-            handler.run(path, duration=.025, sample_period=.01, on_sample=saved)
+            clock = [0.]
+            with patch('event_handler.time.monotonic', side_effect=lambda: clock[0]), patch(
+                    'event_handler.time.sleep', side_effect=lambda seconds: clock.__setitem__(0, clock[0]+seconds)):
+                handler.run(path, duration=.025, sample_period=.01, on_sample=saved)
             with path.open() as stream:
                 rows = list(csv.DictReader(stream))
         self.assertEqual(rows[0]['quality'], 'lockin_unavailable')

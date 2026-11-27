@@ -11,13 +11,12 @@ import re
 import subprocess
 import threading
 import uuid
-from urllib.parse import quote
 import zipfile
 
 from run_support import write_metadata
 
 DEFAULT_REPO = 'memo-ozdincer/cmp-resistivity'
-BRANCH = 'acquisition-data'
+BRANCH = 'main'
 MAX_INPUT_BYTES = 40 * 1024 * 1024
 
 
@@ -93,7 +92,6 @@ class GitHubBackup:
         self.wake = threading.Event()
         self.stopping = threading.Event()
         self.thread = None
-        self.branch_ready = False
 
     def _snapshot(self):
         """Read bounded prefixes. A CSV/event record being written is deferred to the next backup."""
@@ -134,30 +132,10 @@ class GitHubBackup:
         temporary.replace(self.snapshot_path)
         return content, manifest
 
-    def _ensure_branch(self):
-        if self.branch_ready:
-            return
-        root = f'repos/{self.repo}'
-        try:
-            self.api(f'{root}/git/ref/heads/{BRANCH}')
-        except GitHubError as exc:
-            if 'HTTP 404' not in str(exc):
-                raise
-            info = self.api(root)
-            base = self.api(f"{root}/git/ref/heads/{quote(info['default_branch'], safe='')}")
-            try:
-                self.api(f'{root}/git/refs', 'POST',
-                         {'ref': f'refs/heads/{BRANCH}', 'sha': base['object']['sha']})
-            except GitHubError:
-                # Another computer may have created it in the meantime.
-                self.api(f'{root}/git/ref/heads/{BRANCH}')
-        self.branch_ready = True
-
     def upload_once(self):
         self.status.update(state='uploading', last_attempt_utc=datetime.now(timezone.utc).isoformat())
         try:
             content, manifest = self._snapshot()
-            self._ensure_branch()
             endpoint = f'repos/{self.repo}/contents/{self.remote_path}'
             payload = {'message': f'Back up {self.path.name}', 'branch': BRANCH,
                        'content': base64.b64encode(content).decode('ascii')}

@@ -1,8 +1,8 @@
 # Automatic GitHub data backups on Windows
 
 Backups use the existing private `memo-ozdincer/cmp-resistivity` repository, on
-branch `acquisition-data`. Each run has a separate UUID folder under `live/`.
-The acquisition checkout stays on `main`: no automatic Git add, commit, pull,
+branch `main`. Each run has a separate UUID folder under `live/`.
+The acquisition checkout stays on `main`: no local Git add, commit, pull,
 stash or merge runs on the lab PC. A downloaded project ZIP also works.
 
 ## One-time Windows setup
@@ -64,7 +64,10 @@ manifest with byte counts and SHA-256 hashes. In-progress incomplete CSV/event
 records are deferred to the next snapshot. Sidecars are read sequentially, so a
 live metadata row count can differ slightly from the captured CSV prefix.
 
-The branch path contains the latest uploaded ZIP. Previous snapshots remain in
+The `live/` folder on main contains the latest uploaded ZIP. Backup commits advance
+remote main without altering the local checkout. Stop acquisition, then use
+`git pull --ff-only` before editing/pushing code from that checkout. Code CI ignores
+commits that change only `live/` files. Previous snapshots remain in
 Git history. This stores repeated snapshots, so it suits these small laboratory
 runs rather than indefinitely running high-volume acquisition. There is a 40 MiB
 uncompressed input limit per run snapshot; start new segments for larger runs.

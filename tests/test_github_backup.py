@@ -108,7 +108,10 @@ class BackupTests(unittest.TestCase):
                     self.assertTrue(entered.wait(2))
                     release.set()
                 original(row)
-            with patch('github_backup.validate_access'), patch('github_backup.GitHubBackup', return_value=backup), patch('daq_example.display', display):
+            clock = [0.]
+            with patch('github_backup.validate_access'), patch('github_backup.GitHubBackup', return_value=backup), patch('daq_example.display', display), patch(
+                    'event_handler.time.monotonic', side_effect=lambda: clock[0]), patch(
+                    'event_handler.time.sleep', side_effect=lambda seconds: clock.__setitem__(0, clock[0]+seconds)):
                 result = daq_example.main(['--simulate', '--duration', '.06', '--period', '.01',
                     '--console-every', '.001', '--github-backup', '--output', str(path)])
             self.assertEqual(result, 0)

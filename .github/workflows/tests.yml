@@ -2,6 +2,7 @@ name: Hardware-free tests
 on:
   push:
     branches: [main]
+    paths-ignore: ['live/**']
   pull_request:
 jobs:
   test:
