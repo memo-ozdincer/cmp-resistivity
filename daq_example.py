@@ -74,7 +74,7 @@ def parser():
     p.add_argument('--period', type=float, default=1, help='Requested sample interval in seconds')
     p.add_argument('--output', type=Path, help='New CSV path (never overwrites); default: data/runs/<timestamp>.csv')
     p.add_argument('--github-backup', action='store_true',
-                   help='Upload run snapshots to GitHub in the background (requires gh auth login)')
+                   help='Upload run snapshots to GitHub in the background (requires GITHUB_TOKEN or gh authentication)')
     p.add_argument('--github-repo', default='memo-ozdincer/cmp-resistivity', help='Backup OWNER/REPO')
     p.add_argument('--github-backup-seconds', type=float, default=300,
                    help='Seconds between GitHub snapshots, minimum 30 (default: 300)')

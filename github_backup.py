@@ -6,12 +6,15 @@ from datetime import datetime, timezone
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
 import threading
 import uuid
 import zipfile
+from urllib.request import Request, build_opener, HTTPRedirectHandler
+from urllib.error import HTTPError, URLError
 
 from run_support import write_metadata
 
@@ -47,7 +50,31 @@ def complete_csv_prefix(content):
     return text[:end].encode('utf-8')
 
 
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None  # Never forward authorization to another host.
+
+
 def github_api(endpoint, method='GET', payload=None):
+    token = os.environ.get('GITHUB_TOKEN', '').strip() or os.environ.get('GH_TOKEN', '').strip()
+    if token:
+        if not endpoint.startswith('repos/'):
+            raise GitHubError('Expected a GitHub repository API endpoint.')
+        request = Request('https://api.github.com/' + endpoint,
+                          data=json.dumps(payload).encode('utf-8') if payload is not None else None,
+                          method=method, headers={
+                              'Authorization': 'Bearer ' + token,
+                              'Accept': 'application/vnd.github.object+json',
+                              'Content-Type': 'application/json',
+                              'User-Agent': 'cmp-resistivity-backup',
+                          })
+        try:
+            with build_opener(NoRedirect()).open(request, timeout=20) as response:
+                return json.load(response)
+        except HTTPError as exc:
+            raise GitHubError(f'GitHub request failed (HTTP {exc.code}); check token permissions and repository access.') from None
+        except (URLError, OSError, ValueError):
+            raise GitHubError('GitHub connection or response failed; check internet and token configuration.') from None
     command = ['gh', 'api', '--hostname', 'github.com', endpoint, '--method', method,
                '-H', 'Accept: application/vnd.github.object+json']
     if payload is not None:
@@ -56,14 +83,14 @@ def github_api(endpoint, method='GET', payload=None):
         result = subprocess.run(command, input=json.dumps(payload) if payload is not None else None,
                                 text=True, encoding='utf-8', capture_output=True, timeout=20)
     except FileNotFoundError as exc:
-        raise GitHubError('Install GitHub CLI (gh), reopen PowerShell, and run gh auth login.') from exc
+        raise GitHubError('Set GITHUB_TOKEN in PowerShell, or authenticate with GitHub CLI (gh).') from exc
     except subprocess.TimeoutExpired as exc:
         raise GitHubError('GitHub request timed out; local data is preserved.') from exc
     if result.returncode:
         # Do not echo arbitrary CLI output, credentials or request bodies to run metadata.
         match = re.search(r'HTTP (\d{3})', result.stderr)
         raise GitHubError('GitHub request failed' + (f' (HTTP {match[1]})' if match else '') +
-                          '; check internet, gh auth status, and repository write access.')
+                          '; check internet, GitHub authentication, and repository write access.')
     return json.loads(result.stdout)
 
 
@@ -72,7 +99,7 @@ def validate_access(repo):
         raise ValueError('GitHub repository must be OWNER/REPO.')
     info = github_api(f'repos/{repo}')
     if not info.get('permissions', {}).get('push'):
-        raise GitHubError(f'The gh account needs write access to {repo}. Run gh auth login.')
+        raise GitHubError(f'GitHub authentication needs write access to {repo}. Check token permissions or gh auth status.')
 
 
 class GitHubBackup:

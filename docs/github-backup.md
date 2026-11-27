@@ -7,22 +7,26 @@ stash or merge runs on the lab PC. A downloaded project ZIP also works.
 
 ## One-time Windows setup
 
-Install GitHub CLI separately from uv, then reopen PowerShell:
+No GitHub CLI installation is required. Create a [fine-grained personal access
+token](https://github.com/settings/personal-access-tokens/new) on GitHub:
+
+- Resource owner: memo-ozdincer
+- Repository access: Only select repositories → cmp-resistivity
+- Repository permissions: Contents → Read and write (Metadata read is automatic)
+- Choose an expiry covering the lab session.
+
+In PowerShell, paste the token into this hidden prompt:
 
 ```powershell
-winget install --id GitHub.cli -e
-gh auth login --hostname github.com --web
+$env:GITHUB_TOKEN = [System.Net.NetworkCredential]::new('', (Read-Host "GitHub token" -AsSecureString)).Password
 ```
 
-Sign into the account that can write to this private repository. The Mac login
-is not transferred to the Windows PC. Credentials stay with GitHub CLI; the
-program never asks for a token in a command, CSV, or metadata file. If prompted
-for a protocol, HTTPS is suitable. Git credentials are not required for backups.
-
-Official references: [GitHub CLI](https://cli.github.com/),
-[gh authentication](https://cli.github.com/manual/gh_auth_login),
-[gh API](https://cli.github.com/manual/gh_api),
-[repository contents API](https://docs.github.com/en/rest/repos/contents).
+Keep this PowerShell window open for acquisition. The token is available to
+Python in this session only; it is not written to files, command history or
+uploaded metadata. Repeat the prompt when opening a new terminal. Clear it
+after the session with `Remove-Item Env:GITHUB_TOKEN`. Never paste the token into
+chat or repository files. Existing authenticated gh installations still work
+when no environment token is set.
 
 If using a Git checkout, stop acquisition before updating:
 

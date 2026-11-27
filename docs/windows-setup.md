@@ -4,7 +4,7 @@ The logger now uses [provisional named sensor calibration](sensor-calibration.md
 by default. Include `--extra-channels 2` to collect both the base plate and sample.
 
 For automatic uploads while recording, see [GitHub data backups](github-backup.md).
-Install/authenticate GitHub CLI on this Windows PC; the Mac login does not carry over.
+Set a GitHub access token in PowerShell; no GitHub CLI is required. The Mac login does not carry over.
 
 ## uv and Python
 

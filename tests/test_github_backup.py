@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import threading
 import unittest
 from unittest.mock import patch
+from urllib.error import HTTPError, URLError
 import zipfile
 
 import daq_example
@@ -123,11 +124,39 @@ class BackupTests(unittest.TestCase):
                 self.assertEqual(final_metadata['sensor_calibration']['profile']['sensors']['sample']['channel'], 2)
                 self.assertEqual(archive.read('SIMULATED_test.csv'), path.read_bytes())
 
+    def test_direct_token_api_get_and_put_without_gh(self):
+        with patch.dict('os.environ', {'GITHUB_TOKEN': 'test-token'}), patch(
+                'github_backup.build_opener') as opener, patch('github_backup.subprocess.run') as process:
+            open_request = opener.return_value.open
+            open_request.return_value.__enter__.side_effect = lambda: io.BytesIO(b'{"sha":"ok"}')
+            self.assertEqual(github_api('repos/example/repo'), {'sha': 'ok'})
+            request = open_request.call_args.args[0]
+            self.assertEqual(request.full_url, 'https://api.github.com/repos/example/repo')
+            self.assertEqual(request.get_header('Authorization'), 'Bearer test-token')
+            self.assertEqual(request.get_method(), 'GET')
+            payload = {'content': 'YQ==', 'branch': 'main'}
+            github_api('repos/example/repo/contents/live/test.zip', 'PUT', payload)
+            request = open_request.call_args.args[0]
+            self.assertEqual(request.get_method(), 'PUT')
+            self.assertEqual(json.loads(request.data), payload)
+            process.assert_not_called()
+
+    def test_direct_api_errors_do_not_disclose_credentials(self):
+        with patch.dict('os.environ', {'GITHUB_TOKEN': 'test-token'}), patch('github_backup.build_opener') as opener:
+            opener.return_value.open.side_effect = HTTPError('https://api.github.com', 404, 'test-token', {}, None)
+            with self.assertRaisesRegex(GitHubError, 'HTTP 404') as caught:
+                github_api('repos/example/repo')
+            self.assertNotIn('test-token', str(caught.exception))
+            opener.return_value.open.side_effect = URLError('test-token')
+            with self.assertRaises(GitHubError) as caught:
+                github_api('repos/example/repo')
+            self.assertNotIn('test-token', str(caught.exception))
+
     def test_auth_failure_before_hardware_and_no_credentials_in_errors(self):
         with patch('github_backup.validate_access', side_effect=GitHubError('not authenticated')):
             with self.assertRaises(SystemExit):
                 daq_example.main(['--github-backup'])
-        with patch('github_backup.subprocess.run') as run:
+        with patch.dict('os.environ', {'GITHUB_TOKEN': '', 'GH_TOKEN': ''}), patch('github_backup.subprocess.run') as run:
             run.return_value.returncode = 1
             run.return_value.stderr = 'SECRET TOKEN HTTP 403'
             with self.assertRaisesRegex(GitHubError, 'HTTP 403') as caught:
